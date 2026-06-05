@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import Sidebar from './components/layout/Sidebar';
@@ -123,6 +124,11 @@ function AppRouter() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const theme = localStorage.getItem('prismo_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  }, []);
+
   return (
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>

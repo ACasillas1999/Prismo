@@ -18,6 +18,7 @@
   --bg-elevated:     hsl(0, 0%, 100%);
   --bg-hover:        hsl(225, 18%, 90%);
   --bg-active:       hsl(225, 18%, 85%);
+  --bg-glass:        hsla(0, 0%, 100%, 0.8);
 
   --border-subtle:   hsl(225, 15%, 88%);
   --border-default:  hsl(225, 15%, 82%);
@@ -107,6 +108,7 @@
   --bg-elevated:     hsl(225, 18%, 14%);
   --bg-hover:        hsl(225, 18%, 18%);
   --bg-active:       hsl(225, 18%, 22%);
+  --bg-glass:        hsla(225, 20%, 12%, 0.8);
 
   --border-subtle:   hsl(225, 15%, 18%);
   --border-default:  hsl(225, 15%, 22%);
@@ -416,7 +418,7 @@ a:hover {
 }
 
 .card--glass {
-  background: hsla(225, 20%, 12%, 0.7);
+  background: var(--bg-glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
@@ -1029,7 +1031,7 @@ a:hover {
   width: 100%;
   max-width: 420px;
   padding: var(--space-10);
-  background: hsla(225, 20%, 12%, 0.8);
+  background: var(--bg-glass);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border-default);

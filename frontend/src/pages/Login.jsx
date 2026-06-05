@@ -1,10 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { Target, Mail, Lock, ArrowRight } from 'lucide-react';
 import Particles, { ParticlesProvider } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
+
+
 
 export default function Login() {
   const { login } = useAuth();
@@ -17,16 +19,17 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const from = location.state?.from?.pathname || '/';
+  const isDark = (localStorage.getItem('prismo_theme') || 'light') === 'dark';
 
   const particlesInit = useCallback(async engine => {
     await loadSlim(engine);
   }, []);
 
-  const particlesConfig = {
+  const particlesConfig = useMemo(() => ({
     fullScreen: { enable: true, zIndex: 0 },
     background: {
       color: {
-        value: "#0B0F19", // Prisma dark elegant theme
+        value: "transparent",
       },
     },
     fpsLimit: 120,
@@ -43,7 +46,9 @@ export default function Login() {
     },
     particles: {
       color: { 
-        value: ["#8B5CF6", "#3B82F6", "#EC4899", "#10B981", "#F43F5E", "#06B6D4", "#F59E0B"]
+        value: isDark 
+          ? ["#8B5CF6", "#3B82F6", "#EC4899", "#10B981", "#F43F5E", "#06B6D4", "#F59E0B"]
+          : ["#6366F1", "#3B82F6", "#10B981", "#F43F5E", "#8B5CF6"]
       },
       links: {
         color: "random",
@@ -75,7 +80,7 @@ export default function Login() {
       size: { value: { min: 2, max: 5 } },
     },
     detectRetina: true,
-  };
+  }), [isDark]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
