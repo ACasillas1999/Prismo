@@ -15,6 +15,7 @@ router.get('/my', handler.myEvaluations);
 router.get('/',    requireRole('admin', 'department_head'), handler.list);
 router.get('/bulk-details', requireRole('admin', 'department_head'), handler.bulkDetails);
 router.get('/:id', handler.getById);
+router.delete('/:id', requireRole('admin', 'department_head'), handler.remove);
 
 // Create
 router.post('/',     requireRole('admin', 'department_head'), handler.create);

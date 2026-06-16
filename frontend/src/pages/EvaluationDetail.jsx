@@ -4,10 +4,11 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import {
   ArrowLeft, Save, CheckCircle2, Send, Target, BarChart3,
-  MessageSquare, AlertCircle, User, Calendar, Printer, FileSpreadsheet
+  MessageSquare, AlertCircle, User, Calendar, Printer, FileSpreadsheet, Trash2
 } from 'lucide-react';
 import { exportSingleExcel } from '../utils/excelExport';
 import client from '../api/client';
+import Swal from 'sweetalert2';
 
 const STATUS_LABELS = {
   pending: 'Pendiente', in_progress: 'En Progreso', submitted: 'Enviada',
@@ -106,6 +107,32 @@ export default function EvaluationDetail() {
       setSuccess('Evaluación completada');
     } catch (err) {
       setError(err.response?.data?.error || 'Error');
+    }
+  };
+
+  const handleDelete = async () => {
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: "Esta acción no se puede deshacer. Se eliminarán todas las calificaciones asociadas.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (result.isConfirmed) {
+      setSaving(true);
+      try {
+        await client.delete(`/evaluations/${id}`);
+        Swal.fire('Eliminado!', 'La evaluación ha sido eliminada.', 'success').then(() => {
+          navigate('/evaluations');
+        });
+      } catch (err) {
+        Swal.fire('Error', err.response?.data?.error || 'No se pudo eliminar', 'error');
+        setSaving(false);
+      }
     }
   };
 
@@ -456,6 +483,11 @@ export default function EvaluationDetail() {
 
       {/* Action buttons */}
       <div className="flex gap-3 mt-6" style={{ justifyContent: 'flex-end' }}>
+        {isEvaluator && (
+          <button className="btn btn--secondary" onClick={handleDelete} disabled={saving} style={{ color: 'var(--accent-danger)', borderColor: 'var(--accent-danger)' }}>
+            <Trash2 size={18} /> Eliminar
+          </button>
+        )}
         <button className="btn btn--secondary" onClick={exportToExcelWithFormulas}>
           <FileSpreadsheet size={18} /> Exportar Excel
         </button>

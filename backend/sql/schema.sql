@@ -62,6 +62,7 @@ CREATE TABLE evaluation_templates (
   name        VARCHAR(150) NOT NULL,
   description TEXT,
   is_active   TINYINT(1) DEFAULT 1,
+  is_draft    TINYINT(1) DEFAULT 0,
   created_by  INT NOT NULL,
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -81,6 +82,7 @@ CREATE TABLE template_categories (
   description TEXT,
   weight      DECIMAL(5,2) NOT NULL COMMENT 'Peso porcentual, ej: 35.00',
   sort_order  INT DEFAULT 0,
+  is_active   TINYINT(1) DEFAULT 1,
   created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY (template_id) REFERENCES evaluation_templates(id) ON DELETE CASCADE,
@@ -104,6 +106,7 @@ CREATE TABLE template_criteria (
   cap_at_100   TINYINT(1) DEFAULT 1,
   rules        JSON NULL COMMENT 'Array de reglas [min, max, pct]',
   sort_order   INT DEFAULT 0,
+  is_active    TINYINT(1) DEFAULT 1,
   created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY (category_id) REFERENCES template_categories(id) ON DELETE CASCADE,
@@ -167,7 +170,7 @@ CREATE TABLE evaluation_scores (
   updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   FOREIGN KEY (evaluation_id) REFERENCES evaluations(id) ON DELETE CASCADE,
-  FOREIGN KEY (criterion_id)  REFERENCES template_criteria(id),
+  FOREIGN KEY (criterion_id)  REFERENCES template_criteria(id) ON DELETE CASCADE,
 
   UNIQUE KEY uq_score (evaluation_id, criterion_id)
 ) ENGINE=InnoDB;

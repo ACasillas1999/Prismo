@@ -55,7 +55,11 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const kpis = [
+  const kpis = user?.role === 'agent' ? [
+    { label: 'Mis Pendientes', value: stats?.pendingCount || 0, icon: ClipboardCheck, variant: 'warning' },
+    { label: 'Completadas', value: stats?.completedCount || 0, icon: Users, variant: 'primary' },
+    { label: 'Mi Promedio', value: `${stats?.generalAverage || 0}%`, icon: TrendingUp, variant: 'success' },
+  ] : [
     { label: user?.role === 'admin' ? 'Departamentos' : 'Mi Departamento', value: stats?.departmentsCount || 0, icon: LayoutDashboard, variant: 'primary' },
     { label: 'Agentes Activos', value: stats?.activeAgentsCount || 0, icon: Users, variant: 'secondary' },
     { label: 'Evaluaciones Activas', value: stats?.activeEvaluationsCount || 0, icon: ClipboardCheck, variant: 'warning' },
@@ -96,7 +100,7 @@ export default function Dashboard() {
       ) : (
         <>
           {/* KPI Cards */}
-          <div className="grid-4 mb-6">
+          <div className={`mb-6 ${user?.role === 'agent' ? 'grid-3' : 'grid-4'}`}>
             {kpis.map((kpi, i) => (
               <motion.div
                 key={kpi.label}
@@ -232,7 +236,7 @@ export default function Dashboard() {
                               </div>
                             </td>
                             <td>
-                              <button className="btn btn--icon btn--ghost" title="Calificar">
+                              <button className="btn btn--icon btn--ghost" title={user?.role === 'agent' ? 'Ver' : 'Calificar'}>
                                 <Eye size={18} />
                               </button>
                             </td>

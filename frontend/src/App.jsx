@@ -26,7 +26,7 @@ function AppLayout() {
       <main className="main-content">
         <Routes>
           <Route path="/" element={
-            <ProtectedRoute roles={['admin', 'department_head']}>
+            <ProtectedRoute roles={['admin', 'department_head', 'agent']}>
               <Dashboard />
             </ProtectedRoute>
           } />

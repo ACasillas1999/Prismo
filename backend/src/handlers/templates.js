@@ -66,14 +66,14 @@ async function getById(req, res) {
 
     // Fetch categories
     const [categories] = await query(
-      `SELECT * FROM template_categories WHERE template_id = ? ORDER BY sort_order, id`,
+      `SELECT * FROM template_categories WHERE template_id = ? AND is_active = 1 ORDER BY sort_order, id`,
       [template.id]
     );
 
     // Fetch criteria for each category
     for (const cat of categories) {
       const [criteria] = await query(
-        `SELECT * FROM template_criteria WHERE category_id = ? ORDER BY sort_order, id`,
+        `SELECT * FROM template_criteria WHERE category_id = ? AND is_active = 1 ORDER BY sort_order, id`,
         [cat.id]
       );
       cat.criteria = criteria;
@@ -103,18 +103,22 @@ async function create(req, res) {
   const conn = await getConnection();
 
   try {
-    const { position_id, name, description, frequency, categories } = req.body;
+    const { position_id, name, description, frequency, categories, is_draft } = req.body;
+    const isDraft = is_draft === true;
 
     // Validations
     if (!position_id) return res.status(400).json({ error: 'El puesto es requerido' });
     if (!name?.trim()) return res.status(400).json({ error: 'El nombre es requerido' });
-    if (!categories || categories.length === 0) {
+    if (!isDraft && (!categories || categories.length === 0)) {
       return res.status(400).json({ error: 'Debe incluir al menos una categoría' });
     }
 
-    // Validate category weights sum to 100
-    const catWeightSum = categories.reduce((sum, c) => sum + parseFloat(c.weight || 0), 0);
-    if (Math.abs(catWeightSum - 100) > 0.01) {
+    const safeCategories = categories || [];
+
+    if (!isDraft) {
+      // Validate category weights sum to 100
+      const catWeightSum = categories.reduce((sum, c) => sum + parseFloat(c.weight || 0), 0);
+      if (Math.abs(catWeightSum - 100) > 0.01) {
       return res.status(400).json({
         error: `Los pesos de las categorías deben sumar 100% (actualmente: ${catWeightSum.toFixed(2)}%)`,
       });
@@ -134,20 +138,21 @@ async function create(req, res) {
         });
       }
     }
+    }
 
     await conn.beginTransaction();
 
     // Insert template
     const [templateResult] = await conn.execute(
-      `INSERT INTO evaluation_templates (position_id, name, description, frequency, created_by)
-       VALUES (?, ?, ?, ?, ?)`,
-      [position_id, name.trim(), description || null, frequency || 'manual', req.user.id]
+      `INSERT INTO evaluation_templates (position_id, name, description, frequency, is_draft, created_by)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [position_id, name.trim(), description || null, frequency || 'manual', isDraft ? 1 : 0, req.user.id]
     );
     const templateId = templateResult.insertId;
 
     // Insert categories and criteria
-    for (let i = 0; i < categories.length; i++) {
-      const cat = categories[i];
+    for (let i = 0; i < safeCategories.length; i++) {
+      const cat = safeCategories[i];
       const [catResult] = await conn.execute(
         `INSERT INTO template_categories (template_id, name, description, weight, sort_order)
          VALUES (?, ?, ?, ?, ?)`,
@@ -188,11 +193,17 @@ async function update(req, res) {
 
   try {
     const { id } = req.params;
-    const { name, description, position_id, frequency, categories } = req.body;
+    const { name, description, position_id, frequency, categories, is_draft } = req.body;
+    const isDraft = is_draft === true;
+    const safeCategories = categories || [];
 
     if (!name?.trim()) return res.status(400).json({ error: 'El nombre es requerido' });
 
-    if (categories) {
+    if (!isDraft && safeCategories.length === 0) {
+      return res.status(400).json({ error: 'Debe incluir al menos una categoría' });
+    }
+
+    if (safeCategories.length > 0 && !isDraft) {
       // Validate weights
       const catWeightSum = categories.reduce((sum, c) => sum + parseFloat(c.weight || 0), 0);
       if (Math.abs(catWeightSum - 100) > 0.01) {
@@ -221,9 +232,9 @@ async function update(req, res) {
     const [evals] = await conn.execute('SELECT id FROM evaluations WHERE template_id = ? LIMIT 1', [id]);
     const isInUse = evals.length > 0;
 
-    // Update template (name, description, frequency, position)
-    const updates = ['name = ?', 'description = ?', 'frequency = ?'];
-    const params = [name.trim(), description || null, frequency || 'manual'];
+    // Update template (name, description, frequency, is_draft, position)
+    const updates = ['name = ?', 'description = ?', 'frequency = ?', 'is_draft = ?'];
+    const params = [name.trim(), description || null, frequency || 'manual', isDraft ? 1 : 0];
     if (position_id) {
       updates.push('position_id = ?');
       params.push(position_id);
@@ -235,36 +246,71 @@ async function update(req, res) {
       params
     );
 
-    let structureIgnored = false;
+    if (safeCategories) {
+      const [existingCats] = await conn.execute('SELECT id FROM template_categories WHERE template_id = ? AND is_active = 1', [id]);
+      const [existingCrits] = await conn.execute('SELECT c.id FROM template_criteria c JOIN template_categories tc ON c.category_id = tc.id WHERE tc.template_id = ? AND c.is_active = 1', [id]);
 
-    if (categories) {
-      if (isInUse) {
-        // If in use, we CANNOT delete/re-insert categories because it breaks evaluation_scores.
-        // We ignore the categories update but still save the general info.
-        structureIgnored = true;
-      } else {
-        // Delete old categories (cascade deletes criteria)
-        await conn.execute('DELETE FROM template_categories WHERE template_id = ?', [id]);
+      const reqCatIds = new Set();
+      const reqCritIds = new Set();
 
-        // Re-insert
-        for (let i = 0; i < categories.length; i++) {
-          const cat = categories[i];
+      for (let i = 0; i < safeCategories.length; i++) {
+        const cat = safeCategories[i];
+        let categoryId = cat.id;
+
+        if (categoryId) {
+          reqCatIds.add(categoryId);
+          await conn.execute(
+            `UPDATE template_categories SET name=?, description=?, weight=?, sort_order=? WHERE id=?`,
+            [cat.name, cat.description || null, cat.weight, cat.sort_order ?? i, categoryId]
+          );
+        } else {
           const [catResult] = await conn.execute(
-            `INSERT INTO template_categories (template_id, name, description, weight, sort_order)
-             VALUES (?, ?, ?, ?, ?)`,
+            `INSERT INTO template_categories (template_id, name, description, weight, sort_order) VALUES (?, ?, ?, ?, ?)`,
             [id, cat.name, cat.description || null, cat.weight, cat.sort_order ?? i]
           );
-          const categoryId = catResult.insertId;
+          categoryId = catResult.insertId;
+        }
 
-          for (let j = 0; j < (cat.criteria || []).length; j++) {
-            const cr = cat.criteria[j];
+        for (let j = 0; j < (cat.criteria || []).length; j++) {
+          const cr = cat.criteria[j];
+          let criterionId = cr.id;
+
+          if (criterionId) {
+            reqCritIds.add(criterionId);
             await conn.execute(
-              `INSERT INTO template_criteria (category_id, name, description, type, target_value, unit, weight, cap_at_100, rules, sort_order)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [categoryId, cr.name, cr.description || null, cr.type || 'subjective',
-               cr.target_value || null, cr.unit || null, cr.weight, cr.cap_at_100 !== false ? 1 : 0, cr.rules ? JSON.stringify(cr.rules) : null, cr.sort_order ?? j]
+              `UPDATE template_criteria SET name=?, description=?, type=?, target_value=?, unit=?, weight=?, cap_at_100=?, rules=?, sort_order=? WHERE id=?`,
+              [cr.name, cr.description || null, cr.type || 'subjective', cr.target_value || null, cr.unit || null, cr.weight, cr.cap_at_100 !== false ? 1 : 0, cr.rules ? JSON.stringify(cr.rules) : null, cr.sort_order ?? j, criterionId]
             );
+          } else {
+            const [crResult] = await conn.execute(
+              `INSERT INTO template_criteria (category_id, name, description, type, target_value, unit, weight, cap_at_100, rules, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [categoryId, cr.name, cr.description || null, cr.type || 'subjective', cr.target_value || null, cr.unit || null, cr.weight, cr.cap_at_100 !== false ? 1 : 0, cr.rules ? JSON.stringify(cr.rules) : null, cr.sort_order ?? j]
+            );
+            criterionId = crResult.insertId;
+
+            if (isInUse) {
+              const [evalsToUpdate] = await conn.execute(`SELECT id FROM evaluations WHERE template_id = ? AND status != 'completed'`, [id]);
+              for (const e of evalsToUpdate) {
+                await conn.execute(`INSERT IGNORE INTO evaluation_scores (evaluation_id, criterion_id) VALUES (?, ?)`, [e.id, criterionId]);
+              }
+            }
           }
+        }
+      }
+
+      for (const eCat of existingCats) {
+        if (!reqCatIds.has(eCat.id)) {
+          await conn.execute(`UPDATE template_categories SET is_active = 0 WHERE id = ?`, [eCat.id]);
+        }
+      }
+      for (const eCrit of existingCrits) {
+        if (!reqCritIds.has(eCrit.id)) {
+          await conn.execute(`UPDATE template_criteria SET is_active = 0 WHERE id = ?`, [eCrit.id]);
+          await conn.execute(`
+            DELETE es FROM evaluation_scores es
+            JOIN evaluations e ON es.evaluation_id = e.id
+            WHERE es.criterion_id = ? AND e.status != 'completed'
+          `, [eCrit.id]);
         }
       }
     }

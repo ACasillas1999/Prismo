@@ -4,17 +4,42 @@ const { calculateDetailedScores } = require('../utils/scoring');
 const { logAction } = require('../utils/logger');
 
 /** Helper: get full template structure with categories and criteria */
-async function getTemplateStructure(templateId) {
-  const [categories] = await query(
-    'SELECT * FROM template_categories WHERE template_id = ? ORDER BY sort_order, id',
-    [templateId]
-  );
+async function getTemplateStructure(templateId, evaluationId = null) {
+  let catSql = 'SELECT * FROM template_categories WHERE template_id = ?';
+  let catParams = [templateId];
+  if (!evaluationId) {
+    catSql += ' AND is_active = 1';
+  } else {
+    catSql += ` AND (is_active = 1 OR id IN (
+      SELECT c.category_id FROM template_criteria c
+      JOIN evaluation_scores es ON c.id = es.criterion_id
+      WHERE es.evaluation_id = ?
+    ))`;
+    catParams.push(evaluationId);
+  }
+  catSql += ' ORDER BY sort_order, id';
+
+  const [categories] = await query(catSql, catParams);
+
   for (const cat of categories) {
-    const [criteria] = await query(
-      'SELECT * FROM template_criteria WHERE category_id = ? ORDER BY sort_order, id',
-      [cat.id]
-    );
+    let crSql = 'SELECT * FROM template_criteria WHERE category_id = ?';
+    let crParams = [cat.id];
+    if (!evaluationId) {
+      crSql += ' AND is_active = 1';
+    } else {
+      crSql += ` AND (is_active = 1 OR id IN (
+        SELECT criterion_id FROM evaluation_scores WHERE evaluation_id = ?
+      ))`;
+      crParams.push(evaluationId);
+    }
+    crSql += ' ORDER BY sort_order, id';
+
+    const [criteria] = await query(crSql, crParams);
     cat.criteria = criteria;
+  }
+  
+  if (evaluationId) {
+    return categories.filter(c => c.criteria.length > 0);
   }
   return categories;
 }
@@ -34,7 +59,7 @@ async function getScoresMap(evaluationId) {
 
 /** Helper: recalculate and update overall score */
 async function recalculate(evaluationId, templateId) {
-  const categories = await getTemplateStructure(templateId);
+  const categories = await getTemplateStructure(templateId, evaluationId);
   const scoresMap = await getScoresMap(evaluationId);
   const result = calculateDetailedScores(categories, scoresMap);
 
@@ -171,7 +196,7 @@ async function getById(req, res) {
     }
 
     // Get template structure + scores
-    const categories = await getTemplateStructure(evaluation.template_id);
+    const categories = await getTemplateStructure(evaluation.template_id, evaluation.id);
     const scoresMap = await getScoresMap(evaluation.id);
     const detailed = calculateDetailedScores(categories, scoresMap);
 
@@ -267,6 +292,9 @@ async function create(req, res) {
       return res.status(400).json({ error: 'user_id, template_id y period_id son requeridos' });
     }
 
+    const [template] = await conn.execute('SELECT id FROM evaluation_templates WHERE id = ? AND is_draft = 0', [template_id]);
+    if (template.length === 0) return res.status(400).json({ error: 'Plantilla no válida o es un borrador' });
+
     await conn.beginTransaction();
 
     const [result] = await conn.execute(
@@ -316,8 +344,8 @@ async function bulkCreate(req, res) {
     }
 
     // Get all active agents in the department with the template's position
-    const [template] = await query('SELECT position_id FROM evaluation_templates WHERE id = ?', [template_id]);
-    if (template.length === 0) return res.status(404).json({ error: 'Plantilla no encontrada' });
+    const [template] = await query('SELECT position_id FROM evaluation_templates WHERE id = ? AND is_draft = 0', [template_id]);
+    if (template.length === 0) return res.status(404).json({ error: 'Plantilla no válida o es un borrador' });
 
     const [agents] = await query(
       `SELECT id FROM users 
@@ -508,7 +536,56 @@ async function complete(req, res) {
   }
 }
 
+/** DELETE /api/evaluations/:id — Delete evaluation */
+async function remove(req, res) {
+  const conn = await getConnection();
+  try {
+    const { id } = req.params;
+    
+    // Check if the evaluation exists and get department
+    const [evals] = await query(`
+      SELECT e.*, p.department_id 
+      FROM evaluations e
+      JOIN evaluation_templates t ON e.template_id = t.id
+      JOIN positions p ON t.position_id = p.id
+      WHERE e.id = ?
+    `, [id]);
+    
+    if (evals.length === 0) return res.status(404).json({ error: 'Evaluación no encontrada' });
+    
+    const evaluation = evals[0];
+    
+    // Department head can only delete evaluations of their department
+    if (req.user.role === 'department_head' && req.user.department_id && evaluation.department_id !== req.user.department_id) {
+      return res.status(403).json({ error: 'No tienes permiso para eliminar evaluaciones de otro departamento' });
+    }
+    
+    await conn.beginTransaction();
+    
+    // Delete scores
+    await conn.execute('DELETE FROM evaluation_scores WHERE evaluation_id = ?', [id]);
+    
+    // Delete evaluation
+    await conn.execute('DELETE FROM evaluations WHERE id = ?', [id]);
+    
+    await conn.commit();
+    
+    await logAction(req.user.id, 'DELETE_EVALUATION', 'evaluation', id, { 
+      user_id: evaluation.user_id, 
+      template_id: evaluation.template_id 
+    });
+    
+    res.json({ message: 'Evaluación eliminada correctamente' });
+  } catch (err) {
+    await conn.rollback();
+    console.error('[EVALUATIONS] Error delete:', err.message);
+    res.status(500).json({ error: 'Error al eliminar evaluación' });
+  } finally {
+    conn.release();
+  }
+}
+
 module.exports = {
   list, myEvaluations, getById, bulkDetails, create, bulkCreate,
-  updateAgentScores, updateEvaluatorScores, submit, complete,
+  updateAgentScores, updateEvaluatorScores, submit, complete, remove,
 };

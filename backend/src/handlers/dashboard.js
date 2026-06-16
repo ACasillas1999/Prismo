@@ -21,6 +21,49 @@ async function getStats(req, res) {
       departmentsCount = deptRes[0].count;
     }
 
+    if (role === 'agent') {
+      // 1. Pending count
+      const [pendingRes] = await query(`
+        SELECT COUNT(*) as count FROM evaluations 
+        WHERE user_id = ? AND status != 'completed'
+      `, [req.user.id]);
+      const pendingCount = pendingRes[0].count;
+
+      // 2. Completed count
+      const [completedRes] = await query(`
+        SELECT COUNT(*) as count FROM evaluations 
+        WHERE user_id = ? AND status = 'completed'
+      `, [req.user.id]);
+      const completedCount = completedRes[0].count;
+
+      // 3. Average
+      const [avgRes] = await query(`
+        SELECT AVG(overall_score) as average FROM evaluations 
+        WHERE user_id = ? AND status = 'completed' AND overall_score IS NOT NULL
+      `, [req.user.id]);
+      const generalAverage = avgRes[0].average ? parseFloat(avgRes[0].average).toFixed(1) : 0;
+
+      // 4. Pending (Calendar)
+      const [calPendingRes] = await query(`
+        SELECT e.id, e.status, 
+               u.first_name, u.last_name, 
+               t.name AS template_name,
+               ep.end_date as deadline
+        FROM evaluations e
+        JOIN users u ON e.user_id = u.id
+        JOIN evaluation_templates t ON e.template_id = t.id
+        JOIN evaluation_periods ep ON e.period_id = ep.id
+        WHERE e.user_id = ? AND e.status != 'completed'
+      `, [req.user.id]);
+
+      return res.json({
+        pendingCount,
+        completedCount,
+        generalAverage,
+        pendingEvaluations: calPendingRes
+      });
+    }
+
     // 2. Active Agents Count
     let agentsSql = `
       SELECT COUNT(*) as count 

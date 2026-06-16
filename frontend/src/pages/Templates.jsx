@@ -138,9 +138,14 @@ export default function Templates() {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <span className="badge badge--primary">
-                    {t.categories_count} categoría{t.categories_count !== 1 ? 's' : ''}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="badge badge--primary">
+                      {t.categories_count} categoría{t.categories_count !== 1 ? 's' : ''}
+                    </span>
+                    {t.is_draft === 1 && (
+                      <span className="badge badge--warning">Borrador</span>
+                    )}
+                  </div>
                   <span className={`badge badge--${t.frequency === 'monthly' ? 'warning' : t.frequency === 'quarterly' ? 'secondary' : 'neutral'}`}>
                     {t.frequency === 'monthly' ? 'Auto (Mensual)' : t.frequency === 'quarterly' ? 'Auto (Trimestral)' : 'Manual'}
                   </span>

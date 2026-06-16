@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ClipboardCheck, Plus, Eye, Users, CalendarRange,
-  Building2, Filter, Download, FileSpreadsheet
+  Building2, Filter, Download, FileSpreadsheet, Trash2
 } from 'lucide-react';
 import client from '../api/client';
 import Modal from '../components/common/Modal';
 import { exportBulkExcel } from '../utils/excelExport';
 import { useAuth } from '../context/AuthContext';
+import Swal from 'sweetalert2';
 
 const STATUS_LABELS = {
   pending: 'Pendiente',
@@ -88,6 +89,30 @@ export default function Evaluations() {
       setError(err.response?.data?.error || 'Error');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    const result = await Swal.fire({
+      title: '¿Estás seguro?',
+      text: "Esta acción no se puede deshacer. Se eliminarán las calificaciones.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await client.delete(`/evaluations/${id}`);
+        Swal.fire('Eliminado!', 'La evaluación ha sido eliminada.', 'success');
+        fetchData();
+      } catch (err) {
+        Swal.fire('Error', err.response?.data?.error || 'No se pudo eliminar', 'error');
+      }
     }
   };
 
@@ -262,9 +287,21 @@ export default function Evaluations() {
                       </span>
                     </td>
                     <td>
-                      <button className="btn btn--ghost btn--icon btn--sm" title="Ver detalle">
-                        <Eye size={16} />
-                      </button>
+                      <div className="flex gap-2">
+                        <button className="btn btn--ghost btn--icon btn--sm" title="Ver detalle">
+                          <Eye size={16} />
+                        </button>
+                        {(isAdmin || hasRole('department_head')) && (
+                          <button 
+                            className="btn btn--ghost btn--icon btn--sm" 
+                            title="Eliminar"
+                            onClick={(e) => handleDelete(e, ev.id)}
+                            style={{ color: 'var(--accent-danger)' }}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </motion.tr>
                 ))}
@@ -314,7 +351,7 @@ export default function Evaluations() {
             onChange={(e) => setCreateForm({ ...createForm, template_id: e.target.value })}
           >
             <option value="">Seleccionar plantilla...</option>
-            {templates.map(t => (
+            {templates.filter(t => t.is_draft !== 1).map(t => (
               <option key={t.id} value={t.id}>{t.name} ({t.position_name})</option>
             ))}
           </select>

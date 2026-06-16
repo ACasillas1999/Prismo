@@ -55,11 +55,12 @@ export default function TemplateDetail() {
       client.get(`/templates/${id}`)
         .then(r => {
           const t = r.data.template;
-          setForm({
+            setForm({
             name: t.name,
             description: t.description || '',
             position_id: t.position_id,
             frequency: t.frequency || 'manual',
+            is_draft: t.is_draft === 1,
             categories: t.categories.map(cat => ({
               ...cat,
               _key: Math.random().toString(36).slice(2),
@@ -178,7 +179,7 @@ export default function TemplateDetail() {
     }));
   };
 
-  const handleSave = async () => {
+  const handleSave = async (isDraft = false) => {
     setError('');
     setSuccess('');
     setSaving(true);
@@ -186,20 +187,23 @@ export default function TemplateDetail() {
     try {
       const payload = {
         ...form,
+        is_draft: isDraft,
         categories: form.categories.map((cat, ci) => ({
-          name: cat.name,
+          id: cat.id,
+          name: cat.name || 'Categoría sin nombre',
           description: cat.description,
-          weight: parseFloat(cat.weight),
+          weight: parseFloat(cat.weight) || 0,
           sort_order: ci,
           criteria: cat.criteria.map((cr, cri) => ({
-            name: cr.name,
+            id: cr.id,
+            name: cr.name || 'Criterio sin nombre',
             description: cr.description,
             type: cr.type,
-            target_value: cr.type === 'measurable' && cr.target_value ? parseFloat(cr.target_value) : null,
+            target_value: cr.type === 'measurable' && cr.target_value ? (parseFloat(cr.target_value) || 0) : null,
             unit: cr.type === 'measurable' ? cr.unit : null,
-            weight: parseFloat(cr.weight),
+            weight: parseFloat(cr.weight) || 0,
             cap_at_100: cr.cap_at_100,
-            rules: cr.type === 'measurable' && cr.rules?.length > 0 ? cr.rules.map(r => ({ min: parseFloat(r.min), max: parseFloat(r.max), pct: parseFloat(r.pct) })) : null,
+            rules: cr.type === 'measurable' && cr.rules?.length > 0 ? cr.rules.map(r => ({ min: parseFloat(r.min) || 0, max: parseFloat(r.max) || 0, pct: parseFloat(r.pct) || 0 })) : null,
             sort_order: cri,
           })),
         })),
@@ -207,11 +211,11 @@ export default function TemplateDetail() {
 
       if (isNew) {
         const res = await client.post('/templates', payload);
-        setSuccess('Plantilla creada exitosamente');
+        setSuccess(isDraft ? 'Borrador creado exitosamente' : 'Plantilla creada exitosamente');
         setTimeout(() => navigate(`/templates/${res.data.template.id}`), 1000);
       } else {
         await client.put(`/templates/${id}`, payload);
-        setSuccess('Plantilla actualizada');
+        setSuccess(isDraft ? 'Borrador actualizado' : 'Plantilla actualizada');
         setTimeout(() => setSuccess(''), 3000);
       }
     } catch (err) {
@@ -246,9 +250,12 @@ export default function TemplateDetail() {
             </p>
           </div>
         </div>
-        <div className="page-header__actions">
-          <button className="btn btn--primary" onClick={handleSave} disabled={saving}>
-            {saving ? <div className="spinner" /> : <><Save size={18} /> Guardar</>}
+        <div className="page-header__actions flex gap-2">
+          <button className="btn btn--secondary" onClick={() => handleSave(true)} disabled={saving}>
+            <Save size={18} /> Guardar Borrador
+          </button>
+          <button className="btn btn--primary" onClick={() => handleSave(false)} disabled={saving || !catWeightValid}>
+            {saving ? <div className="spinner" /> : <><CheckCircle2 size={18} /> Publicar</>}
           </button>
         </div>
       </div>
