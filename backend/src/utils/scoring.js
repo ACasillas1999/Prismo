@@ -31,8 +31,8 @@ function calculateCriterionScore(criterion, score) {
       return cap ? Math.min(eScore, 100) : eScore;
     }
 
-    // Calculate from agent value vs target
-    if (score.agent_value !== null && score.agent_value !== undefined && criterion.target_value !== null && criterion.target_value !== undefined) {
+    // Calculate from agent value vs target or rules
+    if (score.agent_value !== null && score.agent_value !== undefined && score.agent_value !== '') {
       const val = parseFloat(score.agent_value);
 
       // 1. Check advanced rules
@@ -50,13 +50,15 @@ function calculateCriterionScore(criterion, score) {
         }
       }
 
-      // 2. Default proportional calculation
-      const target = parseFloat(criterion.target_value);
-      if (target === 0) {
-        return val === 0 ? 100 : 0;
+      // 2. Default proportional calculation (only if target_value is present)
+      if (criterion.target_value !== null && criterion.target_value !== undefined) {
+        const target = parseFloat(criterion.target_value);
+        if (target === 0) {
+          return val === 0 ? 100 : 0;
+        }
+        const pct = (val / target) * 100;
+        return cap ? Math.min(pct, 100) : pct;
       }
-      const pct = (val / target) * 100;
-      return cap ? Math.min(pct, 100) : pct;
     }
     return 0;
   }

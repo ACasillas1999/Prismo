@@ -163,7 +163,7 @@ export default function EvaluationDetail() {
           if (evalVal !== null && evalVal !== undefined && evalVal !== '') {
             const eScore = parseFloat(evalVal);
             critScore = cap ? Math.min(eScore, 100) : eScore;
-          } else if (agentVal !== null && agentVal !== undefined && agentVal !== '' && cr.target_value !== null && cr.target_value !== undefined) {
+          } else if (agentVal !== null && agentVal !== undefined && agentVal !== '') {
             const val = parseFloat(agentVal);
             let matchedRule = false;
             
@@ -179,7 +179,7 @@ export default function EvaluationDetail() {
               }
             }
             
-            if (!matchedRule) {
+            if (!matchedRule && cr.target_value !== null && cr.target_value !== undefined) {
               const target = parseFloat(cr.target_value);
               if (target === 0) {
                 critScore = val === 0 ? 100 : 0;
