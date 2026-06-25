@@ -36,7 +36,7 @@ export const buildEvaluationSheet = (wb, data, sheetName, agentEdits = {}, evalE
   ws.addRow([]); // Espacio
 
   let currentRow = 7;
-  let catResultCells = [];
+  let catScoreFormulas = [];
 
   // Recorrer categorías
   data.categories.forEach((cat) => {
@@ -46,7 +46,8 @@ export const buildEvaluationSheet = (wb, data, sheetName, agentEdits = {}, evalE
     catRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } }; // Azul primary
     
     const catHeaderRowIdx = currentRow;
-    catResultCells.push(`F${catHeaderRowIdx}`);
+    const catWeight = parseFloat(cat.weight) || 0;
+    catScoreFormulas.push(`(F${catHeaderRowIdx}*${catWeight/100})`);
     currentRow++;
 
     // Header de tabla
@@ -126,8 +127,8 @@ export const buildEvaluationSheet = (wb, data, sheetName, agentEdits = {}, evalE
   const totalRow = ws.addRow(['', '', '', '', 'Puntaje Final:', 0]);
   totalRow.font = { bold: true, size: 14 };
   
-  if (catResultCells.length > 0) {
-    ws.getCell(`F${currentRow}`).value = { formula: catResultCells.join('+') };
+  if (catScoreFormulas.length > 0) {
+    ws.getCell(`F${currentRow}`).value = { formula: catScoreFormulas.join('+') };
   }
 };
 
