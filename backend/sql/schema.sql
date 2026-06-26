@@ -105,6 +105,7 @@ CREATE TABLE template_criteria (
   weight       DECIMAL(5,2) NOT NULL COMMENT 'Peso dentro de la categoría',
   cap_at_100   TINYINT(1) DEFAULT 1,
   rules        JSON NULL COMMENT 'Array de reglas [min, max, pct]',
+  requires_evidence TINYINT(1) DEFAULT 0 COMMENT '¿Requiere el agente subir archivos de evidencia?',
   sort_order   INT DEFAULT 0,
   is_active    TINYINT(1) DEFAULT 1,
   created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -173,4 +174,15 @@ CREATE TABLE evaluation_scores (
   FOREIGN KEY (criterion_id)  REFERENCES template_criteria(id) ON DELETE CASCADE,
 
   UNIQUE KEY uq_score (evaluation_id, criterion_id)
+) ENGINE=InnoDB;
+
+-- ── Evidencias de Evaluación ────────────────────────────────────────────────
+CREATE TABLE evaluation_evidences (
+  id               INT AUTO_INCREMENT PRIMARY KEY,
+  score_id         INT NOT NULL,
+  file_name        VARCHAR(255) NOT NULL,
+  file_url         VARCHAR(500) NOT NULL,
+  uploaded_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (score_id) REFERENCES evaluation_scores(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

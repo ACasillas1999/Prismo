@@ -200,6 +200,19 @@ async function getById(req, res) {
     const scoresMap = await getScoresMap(evaluation.id);
     const detailed = calculateDetailedScores(categories, scoresMap);
 
+    // Fetch evidences
+    const [evidences] = await query(
+      `SELECT ee.* FROM evaluation_evidences ee 
+       JOIN evaluation_scores es ON ee.score_id = es.id 
+       WHERE es.evaluation_id = ?`,
+      [req.params.id]
+    );
+    const evidenceMap = {};
+    for (const ev of evidences) {
+      if (!evidenceMap[ev.score_id]) evidenceMap[ev.score_id] = [];
+      evidenceMap[ev.score_id].push(ev);
+    }
+
     // Merge scores with template structure
     evaluation.categories = categories.map(cat => ({
       ...cat,
@@ -220,6 +233,7 @@ async function getById(req, res) {
           evaluator_score: scoreRecord?.evaluator_score != null ? parseFloat(scoreRecord.evaluator_score) : null,
           evaluator_comment: scoreRecord?.evaluator_comment || null,
           calculated_score: detailedCr?.score || 0,
+          evidences: scoreRecord ? (evidenceMap[scoreRecord.id] || []) : [],
         };
       }),
     }));
@@ -585,7 +599,81 @@ async function remove(req, res) {
   }
 }
 
+/** POST /api/evaluations/:id/scores/:criterion_id/evidence — Upload evidence file */
+async function uploadEvidence(req, res) {
+  try {
+    const { id, criterion_id } = req.params;
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se subió ningún archivo' });
+    }
+
+    // Verify ownership
+    const [evals] = await query('SELECT user_id, status FROM evaluations WHERE id = ?', [id]);
+    if (evals.length === 0) return res.status(404).json({ error: 'Evaluación no encontrada' });
+    
+    const isOwner = evals[0].user_id === req.user.id;
+    const isAuthorized = isOwner || req.user.role === 'admin' || req.user.role === 'department_head';
+    if (!isAuthorized) return res.status(403).json({ error: 'No tienes permiso para subir evidencia' });
+
+    // Get score_id
+    const [scores] = await query('SELECT id FROM evaluation_scores WHERE evaluation_id = ? AND criterion_id = ?', [id, criterion_id]);
+    if (scores.length === 0) return res.status(404).json({ error: 'Criterio no encontrado en esta evaluación' });
+
+    const fileUrl = '/uploads/' + req.file.filename;
+
+    const [result] = await query(
+      'INSERT INTO evaluation_evidences (score_id, file_name, file_url) VALUES (?, ?, ?)',
+      [scores[0].id, req.file.originalname, fileUrl]
+    );
+
+    res.json({ message: 'Archivo subido correctamente', evidence: { id: result.insertId, file_name: req.file.originalname, file_url: fileUrl } });
+  } catch (err) {
+    console.error('[EVALUATIONS] Error uploadEvidence:', err.message);
+    res.status(500).json({ error: 'Error al subir la evidencia' });
+  }
+}
+
+/** DELETE /api/evaluations/evidence/:evidence_id — Delete evidence file */
+async function deleteEvidence(req, res) {
+  try {
+    const { evidence_id } = req.params;
+    
+    // Find evidence and verify ownership
+    const [evs] = await query(
+      `SELECT ee.id, ee.file_url, e.user_id 
+       FROM evaluation_evidences ee
+       JOIN evaluation_scores es ON ee.score_id = es.id
+       JOIN evaluations e ON es.evaluation_id = e.id
+       WHERE ee.id = ?`,
+      [evidence_id]
+    );
+
+    if (evs.length === 0) return res.status(404).json({ error: 'Evidencia no encontrada' });
+
+    const isOwner = evs[0].user_id === req.user.id;
+    const isAuthorized = isOwner || req.user.role === 'admin' || req.user.role === 'department_head';
+    if (!isAuthorized) return res.status(403).json({ error: 'No tienes permiso para eliminar esta evidencia' });
+
+    // Delete from DB
+    await query('DELETE FROM evaluation_evidences WHERE id = ?', [evidence_id]);
+
+    // Optionally delete from file system
+    const fs = require('fs');
+    const path = require('path');
+    const filePath = path.join(__dirname, '../../', evs[0].file_url);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    res.json({ message: 'Evidencia eliminada correctamente' });
+  } catch (err) {
+    console.error('[EVALUATIONS] Error deleteEvidence:', err.message);
+    res.status(500).json({ error: 'Error al eliminar la evidencia' });
+  }
+}
+
 module.exports = {
   list, myEvaluations, getById, bulkDetails, create, bulkCreate,
   updateAgentScores, updateEvaluatorScores, submit, complete, remove,
+  uploadEvidence, deleteEvidence
 };

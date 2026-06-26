@@ -24,6 +24,7 @@ const emptyCriterion = () => ({
   unit: '',
   weight: '',
   cap_at_100: true,
+  requires_evidence: false,
   rules: [],
 });
 
@@ -71,6 +72,7 @@ export default function TemplateDetail() {
                 weight: parseFloat(cr.weight),
                 target_value: cr.target_value !== null && cr.target_value !== undefined ? parseFloat(cr.target_value) : '',
                 cap_at_100: cr.cap_at_100 !== 0,
+                requires_evidence: cr.requires_evidence !== 0,
                 rules: cr.rules ? (typeof cr.rules === 'string' ? JSON.parse(cr.rules) : cr.rules) : [],
               })),
             })),
@@ -203,6 +205,7 @@ export default function TemplateDetail() {
             unit: cr.type === 'measurable' ? cr.unit : null,
             weight: parseFloat(cr.weight) || 0,
             cap_at_100: cr.cap_at_100,
+            requires_evidence: cr.requires_evidence,
             rules: cr.type === 'measurable' && cr.rules?.length > 0 ? cr.rules.map(r => ({ min: parseFloat(r.min) || 0, max: parseFloat(r.max) || 0, pct: parseFloat(r.pct) || 0 })) : null,
             sort_order: cri,
           })),
@@ -554,6 +557,14 @@ export default function TemplateDetail() {
                                         onChange={(e) => updateCriterion(catIdx, crIdx, 'cap_at_100', e.target.checked)}
                                       />
                                       Límite al 100% (No dar puntos extra si supera la meta)
+                                    </label>
+                                    <label className="flex items-center gap-2 text-sm text-secondary cursor-pointer">
+                                      <input
+                                        type="checkbox"
+                                        checked={cr.requires_evidence || false}
+                                        onChange={(e) => updateCriterion(catIdx, crIdx, 'requires_evidence', e.target.checked)}
+                                      />
+                                      ¿Requiere Evidencia? (El agente podrá subir múltiples archivos)
                                     </label>
                                   </div>
 

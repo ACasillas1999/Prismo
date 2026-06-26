@@ -163,10 +163,10 @@ async function create(req, res) {
         for (let j = 0; j < cat.criteria.length; j++) {
           const cr = cat.criteria[j];
           await conn.execute(
-            `INSERT INTO template_criteria (category_id, name, description, type, target_value, unit, weight, cap_at_100, rules, sort_order)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO template_criteria (category_id, name, description, type, target_value, unit, weight, cap_at_100, rules, requires_evidence, sort_order)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [categoryId, cr.name, cr.description || null, cr.type || 'subjective',
-             cr.target_value || null, cr.unit || null, cr.weight, cr.cap_at_100 !== false ? 1 : 0, cr.rules ? JSON.stringify(cr.rules) : null, cr.sort_order ?? j]
+             cr.target_value || null, cr.unit || null, cr.weight, cr.cap_at_100 !== false ? 1 : 0, cr.rules ? JSON.stringify(cr.rules) : null, cr.requires_evidence ? 1 : 0, cr.sort_order ?? j]
           );
         }
     }
@@ -278,13 +278,13 @@ async function update(req, res) {
           if (criterionId) {
             reqCritIds.add(criterionId);
             await conn.execute(
-              `UPDATE template_criteria SET name=?, description=?, type=?, target_value=?, unit=?, weight=?, cap_at_100=?, rules=?, sort_order=? WHERE id=?`,
-              [cr.name, cr.description || null, cr.type || 'subjective', cr.target_value || null, cr.unit || null, cr.weight, cr.cap_at_100 !== false ? 1 : 0, cr.rules ? JSON.stringify(cr.rules) : null, cr.sort_order ?? j, criterionId]
+              `UPDATE template_criteria SET name=?, description=?, type=?, target_value=?, unit=?, weight=?, cap_at_100=?, rules=?, requires_evidence=?, sort_order=? WHERE id=?`,
+              [cr.name, cr.description || null, cr.type || 'subjective', cr.target_value || null, cr.unit || null, cr.weight, cr.cap_at_100 !== false ? 1 : 0, cr.rules ? JSON.stringify(cr.rules) : null, cr.requires_evidence ? 1 : 0, cr.sort_order ?? j, criterionId]
             );
           } else {
             const [crResult] = await conn.execute(
-              `INSERT INTO template_criteria (category_id, name, description, type, target_value, unit, weight, cap_at_100, rules, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [categoryId, cr.name, cr.description || null, cr.type || 'subjective', cr.target_value || null, cr.unit || null, cr.weight, cr.cap_at_100 !== false ? 1 : 0, cr.rules ? JSON.stringify(cr.rules) : null, cr.sort_order ?? j]
+              `INSERT INTO template_criteria (category_id, name, description, type, target_value, unit, weight, cap_at_100, rules, requires_evidence, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [categoryId, cr.name, cr.description || null, cr.type || 'subjective', cr.target_value || null, cr.unit || null, cr.weight, cr.cap_at_100 !== false ? 1 : 0, cr.rules ? JSON.stringify(cr.rules) : null, cr.requires_evidence ? 1 : 0, cr.sort_order ?? j]
             );
             criterionId = crResult.insertId;
 

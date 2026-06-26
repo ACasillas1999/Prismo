@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import {
   ArrowLeft, Save, CheckCircle2, Send, Target, BarChart3,
-  MessageSquare, AlertCircle, User, Calendar, Printer, FileSpreadsheet, Trash2
+  MessageSquare, AlertCircle, User, Calendar, Printer, FileSpreadsheet, Trash2, Paperclip, UploadCloud, X, ExternalLink, Download
 } from 'lucide-react';
 import { exportSingleExcel } from '../utils/excelExport';
 import client from '../api/client';
@@ -19,6 +19,49 @@ const STATUS_VARIANTS = {
   reviewed: 'primary', completed: 'success',
 };
 
+const EvidencePreviewModal = ({ evidence, onClose }) => {
+  if (!evidence) return null;
+  const url = evidence.file_url;
+  const isImage = url.match(/\.(jpeg|jpg|gif|png)$/i);
+  const isPdf = url.match(/\.(pdf)$/i);
+
+  return (
+    <div style={{ backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="card" style={{ width: '90%', maxWidth: '800px', height: '80vh', display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-primary)', overflow: 'hidden', padding: 0, margin: 'auto' }}>
+        <div className="flex items-center justify-between" style={{ padding: '16px', borderBottom: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
+          <h3 className="font-semibold text-sm truncate" style={{ flex: 1, margin: 0 }}>{evidence.file_name}</h3>
+          <div className="flex items-center gap-2">
+            <a href={url} target="_blank" rel="noopener noreferrer" className="btn btn--ghost btn--icon btn--sm" title="Abrir en nueva pestaña">
+              <ExternalLink size={16} />
+            </a>
+            <a href={url} download className="btn btn--ghost btn--icon btn--sm" title="Descargar">
+              <Download size={16} />
+            </a>
+            <button className="btn btn--ghost btn--icon btn--sm" onClick={onClose} title="Cerrar">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+        <div style={{ flex: 1, padding: '16px', overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
+          {isImage ? (
+            <img src={url} alt={evidence.file_name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+          ) : isPdf ? (
+            <iframe src={url} style={{ width: '100%', height: '100%', border: 'none' }} title={evidence.file_name} />
+          ) : (
+            <div className="flex flex-col items-center justify-center text-secondary">
+              <FileSpreadsheet size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+              <p>No hay vista previa disponible para este tipo de archivo.</p>
+              <a href={url} download className="btn btn--primary mt-4">
+                <Download size={16} /> Descargar Archivo
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function EvaluationDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -27,13 +70,13 @@ export default function EvaluationDetail() {
   const [evaluation, setEvaluation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   // Local edits
   const [agentEdits, setAgentEdits] = useState({});
   const [evalEdits, setEvalEdits] = useState({});
   const [generalComment, setGeneralComment] = useState('');
+  const [uploadingCr, setUploadingCr] = useState(null);
+  const [previewEvidence, setPreviewEvidence] = useState(null);
 
   const isAgent = hasRole('agent');
   const isEvaluator = hasRole('admin', 'department_head');
@@ -50,7 +93,7 @@ export default function EvaluationDetail() {
   }, [id, navigate]);
 
   const handleAgentSave = async () => {
-    setSaving(true); setError(''); setSuccess('');
+    setSaving(true);
     try {
       const scores = Object.entries(agentEdits).map(([criterion_id, data]) => ({
         criterion_id: parseInt(criterion_id),
@@ -60,26 +103,33 @@ export default function EvaluationDetail() {
       const res = await client.patch(`/evaluations/${id}/agent-scores`, { scores });
       setEvaluation(res.data.evaluation);
       setAgentEdits({});
-      setSuccess('Avance guardado');
-      setTimeout(() => setSuccess(''), 3000);
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Avance guardado', showConfirmButton: false, timer: 1500 });
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al guardar');
+      Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err.response?.data?.error || 'Error al guardar', showConfirmButton: false, timer: 2000 });
     } finally { setSaving(false); }
   };
 
   const handleAgentSubmit = async () => {
-    if (!confirm('¿Enviar tu evaluación para revisión? Ya no podrás hacer más cambios.')) return;
+    const confirmResult = await Swal.fire({
+      title: '¿Enviar evaluación?',
+      text: 'Ya no podrás hacer más cambios.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, enviar',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!confirmResult.isConfirmed) return;
     try {
       const res = await client.patch(`/evaluations/${id}/submit`);
       setEvaluation(res.data.evaluation);
-      setSuccess('Evaluación enviada para revisión');
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Evaluación enviada', showConfirmButton: false, timer: 1500 });
     } catch (err) {
-      setError(err.response?.data?.error || 'Error');
+      Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err.response?.data?.error || 'Error al enviar', showConfirmButton: false, timer: 2000 });
     }
   };
 
   const handleEvaluatorSave = async () => {
-    setSaving(true); setError(''); setSuccess('');
+    setSaving(true);
     try {
       const scores = Object.entries(evalEdits).map(([criterion_id, data]) => ({
         criterion_id: parseInt(criterion_id),
@@ -92,21 +142,27 @@ export default function EvaluationDetail() {
       });
       setEvaluation(res.data.evaluation);
       setEvalEdits({});
-      setSuccess('Calificaciones guardadas');
-      setTimeout(() => setSuccess(''), 3000);
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Calificaciones guardadas', showConfirmButton: false, timer: 1500 });
     } catch (err) {
-      setError(err.response?.data?.error || 'Error');
+      Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err.response?.data?.error || 'Error al guardar', showConfirmButton: false, timer: 2000 });
     } finally { setSaving(false); }
   };
 
   const handleComplete = async () => {
-    if (!confirm('¿Marcar esta evaluación como completada?')) return;
+    const confirmResult = await Swal.fire({
+      title: '¿Completar evaluación?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, completar',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!confirmResult.isConfirmed) return;
     try {
       const res = await client.patch(`/evaluations/${id}/complete`);
       setEvaluation(res.data.evaluation);
-      setSuccess('Evaluación completada');
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Evaluación completada', showConfirmButton: false, timer: 1500 });
     } catch (err) {
-      setError(err.response?.data?.error || 'Error');
+      Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err.response?.data?.error || 'Error al completar', showConfirmButton: false, timer: 2000 });
     }
   };
 
@@ -133,6 +189,70 @@ export default function EvaluationDetail() {
         Swal.fire('Error', err.response?.data?.error || 'No se pudo eliminar', 'error');
         setSaving(false);
       }
+    }
+  };
+
+  const handleUploadEvidence = async (criterionId, file) => {
+    if (!file) return;
+    setUploadingCr(criterionId);
+    try {
+      const formData = new FormData();
+      formData.append('evidence', file);
+      
+      const res = await client.post(`/evaluations/${id}/scores/${criterionId}/evidence`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      setEvaluation(prev => {
+        return {
+          ...prev,
+          categories: prev.categories.map(cat => ({
+            ...cat,
+            criteria: cat.criteria.map(cr =>
+              cr.id === criterionId
+                ? { ...cr, evidences: [...(cr.evidences || []), res.data.evidence] }
+                : cr
+            )
+          }))
+        };
+      });
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Archivo subido', showConfirmButton: false, timer: 1500 });
+    } catch (err) {
+      Swal.fire('Error', err.response?.data?.error || 'No se pudo subir', 'error');
+    } finally {
+      setUploadingCr(null);
+      const fileInput = document.getElementById(`file_${criterionId}`);
+      if (fileInput) fileInput.value = '';
+    }
+  };
+
+  const handleDeleteEvidence = async (evidenceId) => {
+    const confirmResult = await Swal.fire({
+      title: '¿Eliminar esta evidencia?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    });
+    if (!confirmResult.isConfirmed) return;
+    try {
+      await client.delete(`/evaluations/evidence/${evidenceId}`);
+      
+      setEvaluation(prev => {
+        return {
+          ...prev,
+          categories: prev.categories.map(cat => ({
+            ...cat,
+            criteria: cat.criteria.map(cr => ({
+              ...cr,
+              evidences: cr.evidences ? cr.evidences.filter(e => e.id !== evidenceId) : []
+            }))
+          }))
+        };
+      });
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Archivo eliminado', showConfirmButton: false, timer: 1500 });
+    } catch (err) {
+      Swal.fire('Error', err.response?.data?.error || 'No se pudo eliminar', 'error');
     }
   };
 
@@ -265,19 +385,8 @@ export default function EvaluationDetail() {
         </div>
       </div>
 
-      {/* Messages */}
-      {error && (
-        <motion.div className="login-card__error" style={{ marginBottom: 'var(--space-4)' }}
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <AlertCircle size={16} style={{ marginRight: 8 }} />{error}
-        </motion.div>
-      )}
-      {success && (
-        <motion.div style={{ padding: 'var(--space-3) var(--space-4)', background: 'var(--accent-success-dim)', border: '1px solid hsl(150,40%,25%)', borderRadius: 'var(--radius-md)', color: 'var(--accent-success)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-4)', display: 'flex', alignItems: 'center' }}
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <CheckCircle2 size={16} style={{ marginRight: 8 }} />{success}
-        </motion.div>
-      )}
+      {/* Preview Modal */}
+      <EvidencePreviewModal evidence={previewEvidence} onClose={() => setPreviewEvidence(null)} />
 
       {/* Summary cards */}
       <div className="grid-4 mb-6">
@@ -381,6 +490,57 @@ export default function EvaluationDetail() {
                             {(cr.cap_at_100 === 0 || cr.cap_at_100 === false) && (
                               <div className="mt-1">
                                 <span className="badge badge--success" style={{ fontSize: '0.65rem' }}>🔥 Sin Límite (Puede superar 100%)</span>
+                              </div>
+                            )}
+
+                            {/* Evidences */}
+                            {(cr.requires_evidence || cr.evidences?.length > 0) && (
+                              <div className="mt-3" style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                                <div className="flex items-center justify-between mb-2">
+                                  <strong className="flex items-center gap-2" style={{ color: 'var(--text-primary)', fontSize: '0.75rem' }}>
+                                    <Paperclip size={14} /> Evidencias {cr.requires_evidence ? '(Requerida)' : '(Opcional)'}
+                                  </strong>
+                                  {canAgentEdit && cr.evidences?.length > 0 && (
+                                    <div>
+                                      <input type="file" id={`file_${cr.id}`} style={{ display: 'none' }} onChange={(e) => handleUploadEvidence(cr.id, e.target.files[0])} accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx,.csv" />
+                                      <label htmlFor={`file_${cr.id}`} className="btn btn--ghost btn--sm" style={{ cursor: 'pointer', fontSize: '0.7rem', padding: '4px 8px', color: 'var(--accent-primary)' }}>
+                                        {uploadingCr === cr.id ? <span className="spinner" style={{ width: 12, height: 12 }}></span> : '+ Añadir otro'}
+                                      </label>
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {(!cr.evidences || cr.evidences.length === 0) ? (
+                                  <div className="flex flex-col items-center justify-center" style={{ padding: '16px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--border-color)', textAlign: 'center' }}>
+                                    {canAgentEdit ? (
+                                      <>
+                                        <UploadCloud size={24} style={{ color: 'var(--text-tertiary)', marginBottom: 8 }} />
+                                        <span className="text-xs text-secondary mb-2">Sube la evidencia requerida para este criterio</span>
+                                        <input type="file" id={`file_empty_${cr.id}`} style={{ display: 'none' }} onChange={(e) => handleUploadEvidence(cr.id, e.target.files[0])} accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx,.csv" />
+                                        <label htmlFor={`file_empty_${cr.id}`} className="btn btn--secondary btn--sm" style={{ cursor: 'pointer', fontSize: '0.75rem' }}>
+                                          {uploadingCr === cr.id ? <><span className="spinner" style={{ width: 14, height: 14 }}></span> Subiendo...</> : 'Seleccionar Archivo'}
+                                        </label>
+                                      </>
+                                    ) : (
+                                      <span className="text-xs text-secondary">No se ha subido evidencia.</span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <ul style={{ padding: 0, margin: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    {cr.evidences.map(evd => (
+                                      <li key={evd.id} className="flex items-center justify-between" style={{ fontSize: '0.75rem', background: 'var(--bg-secondary)', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-color)' }}>
+                                        <button onClick={() => setPreviewEvidence(evd)} className="flex items-center gap-2 hover:opacity-80" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                                          <Paperclip size={12} /> <span style={{ textDecoration: 'underline' }}>{evd.file_name}</span>
+                                        </button>
+                                        {canAgentEdit && (
+                                          <button className="btn btn--icon btn--ghost btn--sm text-danger" onClick={() => handleDeleteEvidence(evd.id)} title="Eliminar evidencia">
+                                            <Trash2 size={14} />
+                                          </button>
+                                        )}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
                               </div>
                             )}
                           </div>

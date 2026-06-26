@@ -17,9 +17,12 @@ const auditRouter       = require('./src/routes/audit');
 const reportsRouter     = require('./src/routes/reports');
 const { runMonthlyAssigner } = require('./src/utils/autoAssigner');
 
+const path = require('path');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // ── Routes ──────────────────────────────────────────────────────────────────
 app.use('/api/auth',        authRouter);
