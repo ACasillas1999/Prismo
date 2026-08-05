@@ -6,7 +6,14 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem('prismo_user');
-    return stored ? JSON.parse(stored) : null;
+    if (!stored || stored === 'undefined') return null;
+    try {
+      return JSON.parse(stored);
+    } catch (err) {
+      console.error('Error parsing user from localStorage:', err);
+      localStorage.removeItem('prismo_user');
+      return null;
+    }
   });
   const [token, setToken] = useState(() => localStorage.getItem('prismo_token'));
   const [loading, setLoading] = useState(true);
