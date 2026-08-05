@@ -661,7 +661,7 @@ export default function EvaluationDetail() {
             <Send size={18} /> Enviar para Revisión
           </button>
         )}
-        {canEvaluatorEdit && Object.keys(evalEdits).length > 0 && (
+        {canEvaluatorEdit && (Object.keys(evalEdits).length > 0 || generalComment !== (ev.evaluator_comments || '')) && (
           <button className="btn btn--primary" onClick={handleEvaluatorSave} disabled={saving}>
             {saving ? <div className="spinner" /> : <><Save size={18} /> Guardar Calificaciones</>}
           </button>

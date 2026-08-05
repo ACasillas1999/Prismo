@@ -486,7 +486,7 @@ async function updateEvaluatorScores(req, res) {
     // Update evaluator info
     const updateFields = ['evaluator_id = ?'];
     const updateParams = [req.user.id];
-    if (comments) {
+    if (comments !== undefined) {
       updateFields.push('evaluator_comments = ?');
       updateParams.push(comments);
     }
