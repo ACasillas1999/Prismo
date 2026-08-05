@@ -15,6 +15,7 @@ const evaluationsRouter = require('./src/routes/evaluations');
 const dashboardRouter   = require('./src/routes/dashboard');
 const auditRouter       = require('./src/routes/audit');
 const reportsRouter     = require('./src/routes/reports');
+const notificationsRouter = require('./src/routes/notifications');
 const { runMonthlyAssigner } = require('./src/utils/autoAssigner');
 
 const path = require('path');
@@ -35,6 +36,7 @@ app.use('/api/evaluations', evaluationsRouter);
 app.use('/api/dashboard',   dashboardRouter);
 app.use('/api/audit',       auditRouter);
 app.use('/api/reports',     reportsRouter);
+app.use('/api/notifications', notificationsRouter);
 
 // Health check
 app.get('/', (_req, res) => res.json({ ok: true, service: 'prismo-kpi', version: '1.0.0' }));

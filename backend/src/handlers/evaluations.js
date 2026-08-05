@@ -519,7 +519,7 @@ async function updateEvaluatorScores(req, res) {
 async function submit(req, res) {
   try {
     const { id } = req.params;
-    const [evals] = await query('SELECT user_id, status FROM evaluations WHERE id = ?', [id]);
+    const [evals] = await query('SELECT user_id, evaluator_id, status FROM evaluations WHERE id = ?', [id]);
     if (evals.length === 0) return res.status(404).json({ error: 'Evaluación no encontrada' });
     if (evals[0].user_id !== req.user.id) return res.status(403).json({ error: 'No es tu evaluación' });
 
@@ -527,6 +527,38 @@ async function submit(req, res) {
       "UPDATE evaluations SET status = 'submitted', submitted_at = NOW() WHERE id = ?",
       [id]
     );
+
+    // Notify evaluator or department head / admins
+    const evaluatorId = evals[0].evaluator_id;
+    if (evaluatorId) {
+      await query(
+        `INSERT INTO notifications (user_id, type, title, message, evaluation_id)
+         VALUES (?, 'submit', 'Avance entregado', ?, ?)`,
+        [
+          evaluatorId,
+          `${req.user.first_name} ${req.user.last_name} ha enviado su avance para revisión.`,
+          id
+        ]
+      );
+    } else {
+      const [heads] = await query(
+        `SELECT id FROM users 
+         WHERE (role = 'department_head' AND department_id = (SELECT department_id FROM users WHERE id = ?)) 
+            OR role = 'admin'`,
+        [req.user.id]
+      );
+      for (const h of heads) {
+        await query(
+          `INSERT INTO notifications (user_id, type, title, message, evaluation_id)
+           VALUES (?, 'submit', 'Avance entregado', ?, ?)`,
+          [
+            h.id,
+            `${req.user.first_name} ${req.user.last_name} ha enviado su avance para revisión.`,
+            id
+          ]
+        );
+      }
+    }
 
     req.params = { id };
     await getById(req, res);
@@ -540,7 +572,7 @@ async function submit(req, res) {
 async function complete(req, res) {
   try {
     const { id } = req.params;
-    const [evals] = await query('SELECT template_id FROM evaluations WHERE id = ?', [id]);
+    const [evals] = await query('SELECT template_id, user_id FROM evaluations WHERE id = ?', [id]);
     if (evals.length === 0) return res.status(404).json({ error: 'Evaluación no encontrada' });
 
     // Final recalculation
@@ -552,6 +584,20 @@ async function complete(req, res) {
        WHERE id = ?`,
       [req.user.id, result.overall, id]
     );
+
+    // Notify the agent
+    const agentId = evals[0].user_id;
+    if (agentId) {
+      await query(
+        `INSERT INTO notifications (user_id, type, title, message, evaluation_id)
+         VALUES (?, 'complete', 'Evaluación completada', ?, ?)`,
+        [
+          agentId,
+          `Tu evaluación ha sido completada por ${req.user.first_name} ${req.user.last_name}. Calificación final: ${result.overall.toFixed(1)}%`,
+          id
+        ]
+      );
+    }
 
     req.params = { id };
     await getById(req, res);
@@ -696,7 +742,7 @@ async function addComment(req, res) {
     }
 
     // Verify evaluation exists and retrieve owner
-    const [evals] = await query('SELECT user_id FROM evaluations WHERE id = ?', [id]);
+    const [evals] = await query('SELECT user_id, evaluator_id FROM evaluations WHERE id = ?', [id]);
     if (evals.length === 0) return res.status(404).json({ error: 'Evaluación no encontrada' });
 
     // Access control
@@ -712,6 +758,52 @@ async function addComment(req, res) {
        VALUES (?, ?, ?)`,
       [id, req.user.id, comment.trim()]
     );
+
+    // Notify the other party
+    if (isOwner) {
+      // Commenter is the agent -> Notify evaluator or department head / admins
+      const evaluatorId = evals[0].evaluator_id;
+      if (evaluatorId) {
+        await query(
+          `INSERT INTO notifications (user_id, type, title, message, evaluation_id)
+           VALUES (?, 'comment', 'Nuevo comentario de Agente', ?, ?)`,
+          [
+            evaluatorId,
+            `${req.user.first_name} ${req.user.last_name} comentó en su evaluación.`,
+            id
+          ]
+        );
+      } else {
+        const [heads] = await query(
+          `SELECT id FROM users 
+           WHERE (role = 'department_head' AND department_id = (SELECT department_id FROM users WHERE id = ?)) 
+              OR role = 'admin'`,
+          [evals[0].user_id]
+        );
+        for (const h of heads) {
+          await query(
+            `INSERT INTO notifications (user_id, type, title, message, evaluation_id)
+             VALUES (?, 'comment', 'Nuevo comentario de Agente', ?, ?)`,
+            [
+              h.id,
+              `${req.user.first_name} ${req.user.last_name} comentó en su evaluación.`,
+              id
+            ]
+          );
+        }
+      }
+    } else {
+      // Commenter is evaluator -> Notify the agent
+      await query(
+        `INSERT INTO notifications (user_id, type, title, message, evaluation_id)
+         VALUES (?, 'comment', 'Nuevo comentario de Evaluador', ?, ?)`,
+        [
+          evals[0].user_id,
+          `${req.user.first_name} ${req.user.last_name} comentó en tu evaluación.`,
+          id
+        ]
+      );
+    }
 
     // Return the updated evaluation details
     req.params = { id };
