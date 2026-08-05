@@ -75,6 +75,7 @@ export default function EvaluationDetail() {
   const [agentEdits, setAgentEdits] = useState({});
   const [evalEdits, setEvalEdits] = useState({});
   const [generalComment, setGeneralComment] = useState('');
+  const [newComment, setNewComment] = useState('');
   const [uploadingCr, setUploadingCr] = useState(null);
   const [previewEvidence, setPreviewEvidence] = useState(null);
 
@@ -91,6 +92,19 @@ export default function EvaluationDetail() {
       .catch(() => navigate(-1))
       .finally(() => setLoading(false));
   }, [id, navigate]);
+
+  const handleAddComment = async () => {
+    if (!newComment.trim()) return;
+    setSaving(true);
+    try {
+      const res = await client.post(`/evaluations/${id}/comments`, { comment: newComment });
+      setEvaluation(res.data.evaluation);
+      setNewComment('');
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Comentario agregado', showConfirmButton: false, timer: 1500 });
+    } catch (err) {
+      Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err.response?.data?.error || 'Error al agregar comentario', showConfirmButton: false, timer: 2000 });
+    } finally { setSaving(false); }
+  };
 
   const handleAgentSave = async () => {
     setSaving(true);
@@ -622,24 +636,101 @@ export default function EvaluationDetail() {
         ))}
       </div>
 
-      {/* General comments (evaluator) */}
-      {isEvaluator && (
-        <div className="card mt-4">
-          <div className="form-group">
-            <label className="form-label flex items-center gap-2">
-              <MessageSquare size={16} /> Comentarios Generales del Evaluador
-            </label>
-            <textarea
-              className="form-textarea"
-              value={generalComment}
-              onChange={(e) => setGeneralComment(e.target.value)}
-              placeholder="Comentarios generales sobre el desempeño del agente..."
-              rows={3}
-              disabled={ev.status === 'completed'}
-            />
-          </div>
+      {/* Unified Comments Timeline / Bitácora */}
+      <div className="card mt-4">
+        <div className="card__header" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+          <h3 className="card__title flex items-center gap-2" style={{ margin: 0 }}>
+            <MessageSquare size={20} style={{ color: 'var(--accent-primary)' }} /> Bitácora de Comentarios
+          </h3>
+          <p className="card__subtitle">Historial de notas y observaciones de agentes y evaluadores</p>
         </div>
-      )}
+
+        {/* Old single evaluator comment (legacy support) */}
+        {ev.evaluator_comments && (
+          <div className="mb-4" style={{ background: 'var(--bg-secondary)', padding: 'var(--space-4)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--accent-warning)' }}>
+            <div className="flex items-center justify-between mb-1" style={{ fontSize: 'var(--text-xs)', fontWeight: 600 }}>
+              <span style={{ color: 'var(--accent-warning)' }}>Evaluador (Comentario General Inicial)</span>
+            </div>
+            <p className="text-sm" style={{ whiteSpace: 'pre-wrap', margin: 0, color: 'var(--text-primary)' }}>
+              {ev.evaluator_comments}
+            </p>
+          </div>
+        )}
+
+        {/* Comments List */}
+        {(!ev.comments || ev.comments.length === 0) ? (
+          <div className="empty-state" style={{ padding: 'var(--space-8)' }}>
+            <div className="empty-state__icon"><MessageSquare size={28} /></div>
+            <p className="empty-state__title">Sin comentarios todavía</p>
+            <p className="empty-state__description">
+              Sé el primero en dejar una nota para esta evaluación.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4 mb-6" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '4px' }}>
+            {ev.comments.map(c => {
+              const isCommentAuthorAgent = c.role === 'agent';
+              const roleLabel = c.role === 'admin' ? 'Administrador' : (c.role === 'department_head' ? 'Evaluador' : 'Agente');
+              const formattedDate = new Date(c.created_at).toLocaleString('es-MX', {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+              });
+
+              return (
+                <div 
+                  key={c.id} 
+                  style={{ 
+                    background: isCommentAuthorAgent ? 'rgba(37, 99, 235, 0.03)' : 'var(--bg-secondary)', 
+                    padding: 'var(--space-4)', 
+                    borderRadius: 'var(--radius-md)', 
+                    border: '1px solid var(--border-color)',
+                    borderLeft: isCommentAuthorAgent ? '3px solid var(--accent-primary)' : '3px solid var(--accent-secondary)'
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2" style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                        {c.first_name} {c.last_name}
+                      </span>
+                      <span className={`badge ${isCommentAuthorAgent ? 'badge--primary' : 'badge--secondary'}`} style={{ fontSize: '0.6rem', padding: '2px 6px' }}>
+                        {roleLabel}
+                      </span>
+                    </div>
+                    <span>{formattedDate}</span>
+                  </div>
+                  <p className="text-sm" style={{ whiteSpace: 'pre-wrap', margin: 0, color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                    {c.comment}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Add comment form */}
+        {ev.status !== 'completed' && (
+          <div className="flex flex-col gap-3" style={{ borderTop: '1px solid var(--border-color)', paddingTop: 'var(--space-4)' }}>
+            <textarea
+              className="form-input"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Escribe un comentario..."
+              rows={3}
+              style={{ width: '100%', resize: 'vertical', minHeight: '80px', padding: 'var(--space-3)' }}
+            />
+            <div className="flex" style={{ justifyContent: 'flex-end' }}>
+              <button 
+                className="btn btn--primary" 
+                onClick={handleAddComment} 
+                disabled={saving || !newComment.trim()}
+                style={{ fontSize: 'var(--text-sm)' }}
+              >
+                {saving ? <div className="spinner" style={{ width: 14, height: 14 }} /> : 'Agregar Comentario'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Action buttons */}
       <div className="flex gap-3 mt-6" style={{ justifyContent: 'flex-end' }}>
@@ -661,7 +752,7 @@ export default function EvaluationDetail() {
             <Send size={18} /> Enviar para Revisión
           </button>
         )}
-        {canEvaluatorEdit && (Object.keys(evalEdits).length > 0 || generalComment !== (ev.evaluator_comments || '')) && (
+        {canEvaluatorEdit && Object.keys(evalEdits).length > 0 && (
           <button className="btn btn--primary" onClick={handleEvaluatorSave} disabled={saving}>
             {saving ? <div className="spinner" /> : <><Save size={18} /> Guardar Calificaciones</>}
           </button>

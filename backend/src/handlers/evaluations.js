@@ -240,6 +240,17 @@ async function getById(req, res) {
 
     evaluation.overall_score = detailed.overall;
 
+    // Fetch comments
+    const [comments] = await query(
+      `SELECT ec.*, u.first_name, u.last_name, u.role, u.avatar_url 
+       FROM evaluation_comments ec
+       JOIN users u ON ec.user_id = u.id
+       WHERE ec.evaluation_id = ?
+       ORDER BY ec.created_at ASC`,
+      [req.params.id]
+    );
+    evaluation.comments = comments;
+
     res.json({ evaluation });
   } catch (err) {
     console.error('[EVALUATIONS] Error getById:', err.message);
@@ -674,8 +685,45 @@ async function deleteEvidence(req, res) {
   }
 }
 
+/** POST /api/evaluations/:id/comments — Add a comment */
+async function addComment(req, res) {
+  try {
+    const { id } = req.params;
+    const { comment } = req.body;
+
+    if (!comment || comment.trim() === '') {
+      return res.status(400).json({ error: 'El comentario no puede estar vacío' });
+    }
+
+    // Verify evaluation exists and retrieve owner
+    const [evals] = await query('SELECT user_id FROM evaluations WHERE id = ?', [id]);
+    if (evals.length === 0) return res.status(404).json({ error: 'Evaluación no encontrada' });
+
+    // Access control
+    const isOwner = evals[0].user_id === req.user.id;
+    const isAuthorized = isOwner || req.user.role === 'admin' || req.user.role === 'department_head';
+    if (!isAuthorized) {
+      return res.status(403).json({ error: 'No tienes permiso para comentar en esta evaluación' });
+    }
+
+    // Insert comment
+    await query(
+      `INSERT INTO evaluation_comments (evaluation_id, user_id, comment)
+       VALUES (?, ?, ?)`,
+      [id, req.user.id, comment.trim()]
+    );
+
+    // Return the updated evaluation details
+    req.params = { id };
+    await getById(req, res);
+  } catch (err) {
+    console.error('[EVALUATIONS] Error addComment:', err.message);
+    res.status(500).json({ error: 'Error al agregar el comentario' });
+  }
+}
+
 module.exports = {
   list, myEvaluations, getById, bulkDetails, create, bulkCreate,
   updateAgentScores, updateEvaluatorScores, submit, complete, remove,
-  uploadEvidence, deleteEvidence
+  uploadEvidence, deleteEvidence, addComment
 };

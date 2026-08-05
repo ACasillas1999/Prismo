@@ -27,6 +27,7 @@ router.patch('/:id/agent-scores', requireRole('agent', 'admin', 'department_head
 router.patch('/:id/submit',       requireRole('agent'), handler.submit);
 router.post('/:id/scores/:criterion_id/evidence', requireRole('agent', 'admin', 'department_head'), upload.single('evidence'), handler.uploadEvidence);
 router.delete('/evidence/:evidence_id', requireRole('agent', 'admin', 'department_head'), handler.deleteEvidence);
+router.post('/:id/comments',      requireRole('agent', 'admin', 'department_head'), handler.addComment);
 
 // Evaluator actions
 router.patch('/:id/evaluator-scores', requireRole('admin', 'department_head'), handler.updateEvaluatorScores);
