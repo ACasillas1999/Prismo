@@ -77,11 +77,29 @@ async function runMonthlyAssigner() {
         );
 
         if (existing.length === 0) {
-          await conn.execute(
+          const [result] = await conn.execute(
             `INSERT INTO evaluations (user_id, template_id, period_id, status)
              VALUES (?, ?, ?, 'pending')`,
             [u.id, t.id, periodId]
           );
+          const evalId = result.insertId;
+
+          // Fetch criteria for the template
+          const [criteria] = await conn.execute(
+            `SELECT c.id FROM template_criteria c
+             JOIN template_categories cat ON c.category_id = cat.id
+             WHERE cat.template_id = ?`,
+            [t.id]
+          );
+
+          // Initialize score rows
+          for (const cr of criteria) {
+            await conn.execute(
+              'INSERT INTO evaluation_scores (evaluation_id, criterion_id) VALUES (?, ?)',
+              [evalId, cr.id]
+            );
+          }
+
           assignedCount++;
         }
       }

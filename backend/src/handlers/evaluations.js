@@ -439,11 +439,12 @@ async function updateAgentScores(req, res) {
 
     // Update scores
     for (const s of scores) {
+      const val = (s.value === '' || s.value === undefined) ? null : s.value;
       await query(
-        `UPDATE evaluation_scores 
-         SET agent_value = ?, agent_comment = ?
-         WHERE evaluation_id = ? AND criterion_id = ?`,
-        [s.value ?? null, s.comment ?? null, id, s.criterion_id]
+        `INSERT INTO evaluation_scores (evaluation_id, criterion_id, agent_value, agent_comment)
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE agent_value = VALUES(agent_value), agent_comment = VALUES(agent_comment)`,
+        [id, s.criterion_id, val, s.comment ?? null]
       );
     }
 
@@ -473,11 +474,12 @@ async function updateEvaluatorScores(req, res) {
     if (evals.length === 0) return res.status(404).json({ error: 'Evaluación no encontrada' });
 
     for (const s of scores) {
+      const val = (s.score === '' || s.score === undefined) ? null : s.score;
       await query(
-        `UPDATE evaluation_scores 
-         SET evaluator_score = ?, evaluator_comment = ?
-         WHERE evaluation_id = ? AND criterion_id = ?`,
-        [s.score ?? null, s.comment ?? null, id, s.criterion_id]
+        `INSERT INTO evaluation_scores (evaluation_id, criterion_id, evaluator_score, evaluator_comment)
+         VALUES (?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE evaluator_score = VALUES(evaluator_score), evaluator_comment = VALUES(evaluator_comment)`,
+        [id, s.criterion_id, val, s.comment ?? null]
       );
     }
 
