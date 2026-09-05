@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
-  FileSpreadsheet, Plus, Eye, Trash2, Building2, Briefcase, ChevronRight,
+  FileSpreadsheet, Plus, Eye, Trash2, Building2, Briefcase, ChevronRight, Copy,
 } from 'lucide-react';
 import client from '../api/client';
 import Modal from '../components/common/Modal';
+import DuplicateTemplateModal from '../components/templates/DuplicateTemplateModal';
 import { useAuth } from '../context/AuthContext';
 
 export default function Templates() {
@@ -15,9 +16,9 @@ export default function Templates() {
   const [positions, setPositions] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [createOpen, setCreateOpen] = useState(false);
   const [filterDept, setFilterDept] = useState('');
   const [filterPos, setFilterPos] = useState('');
+  const [selectedForDuplicate, setSelectedForDuplicate] = useState(null);
   const navigate = useNavigate();
 
   const fetchData = useCallback(async () => {
@@ -149,19 +150,36 @@ export default function Templates() {
                   <span className={`badge badge--${t.frequency === 'monthly' ? 'warning' : t.frequency === 'quarterly' ? 'secondary' : 'neutral'}`}>
                     {t.frequency === 'monthly' ? 'Auto (Mensual)' : t.frequency === 'quarterly' ? 'Auto (Trimestral)' : 'Manual'}
                   </span>
-                  <button
-                    className="btn btn--danger btn--icon btn--sm"
-                    onClick={(e) => { e.stopPropagation(); handleDelete(t); }}
-                    title="Eliminar"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      className="btn btn--secondary btn--icon btn--sm"
+                      onClick={() => setSelectedForDuplicate(t)}
+                      title="Duplicar Plantilla"
+                    >
+                      <Copy size={14} />
+                    </button>
+                    <button
+                      className="btn btn--danger btn--icon btn--sm"
+                      onClick={() => handleDelete(t)}
+                      title="Eliminar"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ))}
           </AnimatePresence>
         </div>
       )}
+
+      <DuplicateTemplateModal
+        isOpen={!!selectedForDuplicate}
+        onClose={() => setSelectedForDuplicate(null)}
+        template={selectedForDuplicate}
+        positions={positions}
+        onSuccess={(newTemplate) => navigate(`/templates/${newTemplate.id}`)}
+      />
     </div>
   );
 }

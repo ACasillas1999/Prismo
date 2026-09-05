@@ -11,6 +11,7 @@ router.use(authenticate);
 router.get('/',    handler.list);
 router.get('/:id', handler.getById);
 router.post('/',   requireRole('admin', 'department_head'), handler.create);
+router.post('/:id/duplicate', requireRole('admin', 'department_head'), handler.duplicate);
 router.put('/:id', requireRole('admin', 'department_head'), handler.update);
 router.delete('/:id', requireRole('admin', 'department_head'), handler.remove);
 

@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Save, Plus, Trash2, GripVertical,
-  Target, BarChart3, MessageSquare, AlertCircle, CheckCircle2,
+  Target, BarChart3, MessageSquare, AlertCircle, CheckCircle2, Copy,
 } from 'lucide-react';
 import client from '../api/client';
+import DuplicateTemplateModal from '../components/templates/DuplicateTemplateModal';
 
 const emptyCategory = () => ({
   _key: Math.random().toString(36).slice(2),
@@ -38,6 +39,7 @@ export default function TemplateDetail() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
@@ -254,6 +256,11 @@ export default function TemplateDetail() {
           </div>
         </div>
         <div className="page-header__actions flex gap-2">
+          {!isNew && (
+            <button className="btn btn--secondary" onClick={() => setDuplicateOpen(true)}>
+              <Copy size={18} /> Duplicar
+            </button>
+          )}
           <button className="btn btn--secondary" onClick={() => handleSave(true)} disabled={saving}>
             <Save size={18} /> Guardar Borrador
           </button>
@@ -629,6 +636,16 @@ export default function TemplateDetail() {
       >
         <Plus size={18} /> Agregar Categoría
       </motion.button>
+
+      {!isNew && (
+        <DuplicateTemplateModal
+          isOpen={duplicateOpen}
+          onClose={() => setDuplicateOpen(false)}
+          template={{ id, name: form.name, position_id: form.position_id }}
+          positions={positions}
+          onSuccess={(newTemplate) => navigate(`/templates/${newTemplate.id}`)}
+        />
+      )}
     </div>
   );
 }

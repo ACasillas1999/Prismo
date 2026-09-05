@@ -348,4 +348,105 @@ async function remove(req, res) {
   }
 }
 
-module.exports = { list, getById, create, update, remove };
+/** POST /api/templates/:id/duplicate — Duplicate template with categories and criteria */
+async function duplicate(req, res) {
+  const conn = await getConnection();
+
+  try {
+    const { id } = req.params;
+    const { target_position_id, name } = req.body;
+
+    // Fetch original template
+    const [templates] = await conn.execute(
+      `SELECT * FROM evaluation_templates WHERE id = ? AND is_active = 1`,
+      [id]
+    );
+
+    if (templates.length === 0) {
+      return res.status(404).json({ error: 'Plantilla original no encontrada' });
+    }
+
+    const orig = templates[0];
+    const newPositionId = target_position_id || orig.position_id;
+    const newName = name?.trim() || `${orig.name} (Copia)`;
+
+    // Check target position exists
+    const [positions] = await conn.execute(
+      `SELECT id FROM positions WHERE id = ? AND is_active = 1`,
+      [newPositionId]
+    );
+    if (positions.length === 0) {
+      return res.status(400).json({ error: 'El puesto destino no existe o no está activo' });
+    }
+
+    // Fetch categories of original
+    const [categories] = await conn.execute(
+      `SELECT * FROM template_categories WHERE template_id = ? AND is_active = 1 ORDER BY sort_order, id`,
+      [id]
+    );
+
+    await conn.beginTransaction();
+
+    // Insert duplicated template (created as draft or active based on orig, or as draft for review)
+    const [templateResult] = await conn.execute(
+      `INSERT INTO evaluation_templates (position_id, name, description, frequency, is_draft, created_by)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [newPositionId, newName, orig.description || null, orig.frequency || 'manual', orig.is_draft, req.user.id]
+    );
+    const newTemplateId = templateResult.insertId;
+
+    // Insert categories and criteria
+    for (const cat of categories) {
+      const [catResult] = await conn.execute(
+        `INSERT INTO template_categories (template_id, name, description, weight, sort_order)
+         VALUES (?, ?, ?, ?, ?)`,
+        [newTemplateId, cat.name, cat.description || null, cat.weight, cat.sort_order]
+      );
+      const newCategoryId = catResult.insertId;
+
+      const [criteria] = await conn.execute(
+        `SELECT * FROM template_criteria WHERE category_id = ? AND is_active = 1 ORDER BY sort_order, id`,
+        [cat.id]
+      );
+
+      for (const cr of criteria) {
+        await conn.execute(
+          `INSERT INTO template_criteria (category_id, name, description, type, target_value, unit, weight, cap_at_100, rules, requires_evidence, sort_order)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            newCategoryId,
+            cr.name,
+            cr.description || null,
+            cr.type,
+            cr.target_value,
+            cr.unit,
+            cr.weight,
+            cr.cap_at_100,
+            cr.rules ? (typeof cr.rules === 'string' ? cr.rules : JSON.stringify(cr.rules)) : null,
+            cr.requires_evidence,
+            cr.sort_order
+          ]
+        );
+      }
+    }
+
+    await conn.commit();
+
+    await logAction(req.user.id, 'DUPLICATE_TEMPLATE', 'template', newTemplateId, {
+      original_id: id,
+      name: newName,
+      position_id: newPositionId,
+    });
+
+    req.params = { id: newTemplateId };
+    await getById(req, res);
+  } catch (err) {
+    await conn.rollback();
+    console.error('[TEMPLATES] Error duplicate:', err.message);
+    res.status(500).json({ error: 'Error al duplicar plantilla' });
+  } finally {
+    conn.release();
+  }
+}
+
+module.exports = { list, getById, create, update, remove, duplicate };
