@@ -223,3 +223,76 @@ export const exportDashboardExcel = async (data, deptName = 'General', filename 
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   saveAs(blob, filename);
 };
+
+/**
+ * Exporta el historial de un agente específico a Excel
+ */
+export const exportAgentReportExcel = async (agentData, filename = 'Reporte_Agente.xlsx') => {
+  const wb = new ExcelJS.Workbook();
+  const agent = agentData.agent || {};
+  const stats = agentData.stats || {};
+  
+  // Sheet 1: Resumen del Agente
+  const ws1 = wb.addWorksheet('Resumen de Agente');
+  ws1.getColumn(1).width = 25;
+  ws1.getColumn(2).width = 30;
+
+  ws1.addRow(['Reporte de Rendimiento por Agente']);
+  ws1.getCell('A1').font = { size: 16, bold: true };
+  ws1.addRow([]);
+
+  ws1.addRow(['Agente:', `${agent.first_name || ''} ${agent.last_name || ''}`]);
+  ws1.addRow(['Puesto:', agent.position_name || '-']);
+  ws1.addRow(['Departamento:', agent.department_name || '-']);
+  ws1.addRow(['Promedio Histórico:', `${stats.avgScore || 0}%`]);
+  ws1.addRow(['Evaluaciones Completadas:', stats.totalEvals || 0]);
+  ws1.addRow(['Mejor Calificación:', `${stats.maxScore || 0}%`]);
+  ws1.addRow(['Última Calificación:', `${stats.latestScore || 0}%`]);
+  ws1.addRow([]);
+
+  // Promedios por categoría
+  ws1.addRow(['Categoría Evaluada', 'Promedio Obtenido']);
+  const catRowIdx = ws1.lastRow.number;
+  ws1.getRow(catRowIdx).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  ws1.getRow(catRowIdx).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } };
+
+  if (agentData.categoryAverages && agentData.categoryAverages.length > 0) {
+    agentData.categoryAverages.forEach(cat => {
+      ws1.addRow([cat.subject, `${cat.A}%`]);
+    });
+  } else {
+    ws1.addRow(['Sin datos', '-']);
+  }
+
+  // Sheet 2: Historial de Evaluaciones
+  const ws2 = wb.addWorksheet('Historial de Evaluaciones');
+  ws2.getColumn(1).width = 25;
+  ws2.getColumn(2).width = 30;
+  ws2.getColumn(3).width = 25;
+  ws2.getColumn(4).width = 15;
+  ws2.getColumn(5).width = 20;
+
+  ws2.addRow(['Período', 'Plantilla / Evaluación', 'Evaluador', 'Calificación', 'Fecha']);
+  ws2.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  ws2.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } };
+
+  if (agentData.evaluations && agentData.evaluations.length > 0) {
+    agentData.evaluations.forEach(ev => {
+      const dateStr = ev.created_at ? new Date(ev.created_at).toLocaleDateString('es-MX') : '-';
+      const evalName = ev.evaluator_first ? `${ev.evaluator_first} ${ev.evaluator_last}` : 'Autoasignado';
+      ws2.addRow([
+        ev.period_name,
+        ev.template_title,
+        evalName,
+        `${parseFloat(ev.overall_score).toFixed(1)}%`,
+        dateStr
+      ]);
+    });
+  } else {
+    ws2.addRow(['-', 'Sin evaluaciones', '-', '-', '-']);
+  }
+
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveAs(blob, filename);
+};

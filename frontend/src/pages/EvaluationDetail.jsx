@@ -468,14 +468,14 @@ export default function EvaluationDetail() {
                 <thead>
                   <tr>
                     <th>Criterio</th>
-                    <th style={{ width: 85 }}>Tipo</th>
-                    <th style={{ width: 80 }}>Peso</th>
+                    <th style={{ width: 95 }}>Tipo</th>
+                    <th style={{ width: 95 }}>Peso</th>
                     {/* Agent columns */}
-                    <th style={{ width: 100 }}>Avance</th>
-                    <th style={{ width: 80 }}>Meta</th>
+                    <th style={{ width: 160 }}>Avance</th>
+                    <th style={{ width: 140 }}>Meta</th>
                     {/* Evaluator column */}
-                    <th style={{ width: 100 }}>Calificación</th>
-                    <th style={{ width: 80 }}>Resultado</th>
+                    <th style={{ width: 130 }}>Calificación</th>
+                    <th style={{ width: 100 }}>Resultado</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -578,7 +578,7 @@ export default function EvaluationDetail() {
                                 ...agentEdits,
                                 [cr.id]: { ...agentEdits[cr.id], value: e.target.value },
                               })}
-                              style={{ width: 80, textAlign: 'right', fontFamily: 'var(--font-mono)', padding: 'var(--space-1) var(--space-2)', fontSize: 'var(--text-sm)' }}
+                              style={{ width: 140, textAlign: 'right', fontFamily: 'var(--font-mono)', padding: '6px 8px', fontSize: 'var(--text-sm)' }}
                             />
                           ) : cr.type === 'measurable' ? (
                             <span className="text-mono text-sm">
@@ -611,7 +611,7 @@ export default function EvaluationDetail() {
                                 [cr.id]: { ...evalEdits[cr.id], score: e.target.value },
                               })}
                               placeholder="0-100"
-                              style={{ width: 80, textAlign: 'right', fontFamily: 'var(--font-mono)', padding: 'var(--space-1) var(--space-2)', fontSize: 'var(--text-sm)' }}
+                              style={{ width: 110, textAlign: 'right', fontFamily: 'var(--font-mono)', padding: '6px 8px', fontSize: 'var(--text-sm)' }}
                             />
                           ) : (
                             <span className="text-mono text-sm">

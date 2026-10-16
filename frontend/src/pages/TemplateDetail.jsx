@@ -406,14 +406,14 @@ export default function TemplateDetail() {
                       onChange={(e) => updateCategory(catIdx, 'name', e.target.value)}
                       placeholder="Nombre de la categoría"
                     />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 120 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 140 }}>
                       <input
                         className="form-input"
                         type="number"
                         step="0.01"
                         min="0"
                         max="100"
-                        style={{ width: 80, textAlign: 'right', fontFamily: 'var(--font-mono)' }}
+                        style={{ width: 110, textAlign: 'right', fontFamily: 'var(--font-mono)' }}
                         value={cat.weight}
                         onChange={(e) => updateCategory(catIdx, 'weight', e.target.value)}
                         placeholder="0"
@@ -462,9 +462,9 @@ export default function TemplateDetail() {
                         <tr>
                           <th>Criterio</th>
                           <th style={{ width: 130 }}>Tipo</th>
-                          <th style={{ width: 90 }}>Meta</th>
-                          <th style={{ width: 80 }}>Unidad</th>
-                          <th style={{ width: 80 }}>Peso %</th>
+                          <th style={{ width: 160 }}>Meta</th>
+                          <th style={{ width: 120 }}>Unidad</th>
+                          <th style={{ width: 120 }}>Peso %</th>
                           <th style={{ width: 40 }}></th>
                         </tr>
                       </thead>
@@ -501,7 +501,7 @@ export default function TemplateDetail() {
                                     value={cr.target_value}
                                     onChange={(e) => updateCriterion(catIdx, crIdx, 'target_value', e.target.value)}
                                     placeholder="0"
-                                    style={{ fontSize: 'var(--text-sm)', padding: 'var(--space-2)', textAlign: 'right', fontFamily: 'var(--font-mono)' }}
+                                    style={{ fontSize: 'var(--text-sm)', padding: '6px 8px', textAlign: 'right', fontFamily: 'var(--font-mono)', minWidth: 140 }}
                                   />
                                 ) : (
                                   <span className="text-xs text-secondary">N/A</span>
@@ -514,7 +514,7 @@ export default function TemplateDetail() {
                                     value={cr.unit}
                                     onChange={(e) => updateCriterion(catIdx, crIdx, 'unit', e.target.value)}
                                     placeholder="unidad"
-                                    style={{ fontSize: 'var(--text-sm)', padding: 'var(--space-2)' }}
+                                    style={{ fontSize: 'var(--text-sm)', padding: '6px 8px', minWidth: 100 }}
                                   />
                                 ) : (
                                   <span className="text-xs text-secondary">—</span>
@@ -530,7 +530,7 @@ export default function TemplateDetail() {
                                   value={cr.weight}
                                   onChange={(e) => updateCriterion(catIdx, crIdx, 'weight', e.target.value)}
                                   placeholder="0"
-                                  style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-sm)', padding: 'var(--space-2)' }}
+                                  style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: 'var(--text-sm)', padding: '6px 8px', minWidth: 100 }}
                                 />
                               </td>
                               <td>
@@ -586,13 +586,13 @@ export default function TemplateDetail() {
                                       {cr.rules?.length > 0 ? (
                                         <div className="flex flex-col gap-2">
                                           {cr.rules.map((rule, ruleIdx) => (
-                                            <div key={ruleIdx} className="flex items-center gap-2">
+                                            <div key={ruleIdx} className="flex items-center gap-2 flex-wrap">
                                               <span className="text-xs">Si obtiene entre</span>
-                                              <input className="form-input" type="number" value={rule.min} onChange={e => updateRule(catIdx, crIdx, ruleIdx, 'min', e.target.value)} placeholder="0" style={{ width: 70, padding: 4, fontSize: 'var(--text-xs)' }} />
+                                              <input className="form-input" type="number" value={rule.min} onChange={e => updateRule(catIdx, crIdx, ruleIdx, 'min', e.target.value)} placeholder="0" style={{ width: 110, padding: '4px 6px', fontSize: 'var(--text-xs)', textAlign: 'right', fontFamily: 'var(--font-mono)' }} />
                                               <span className="text-xs">y</span>
-                                              <input className="form-input" type="number" value={rule.max} onChange={e => updateRule(catIdx, crIdx, ruleIdx, 'max', e.target.value)} placeholder="5" style={{ width: 70, padding: 4, fontSize: 'var(--text-xs)' }} />
+                                              <input className="form-input" type="number" value={rule.max} onChange={e => updateRule(catIdx, crIdx, ruleIdx, 'max', e.target.value)} placeholder="5" style={{ width: 110, padding: '4px 6px', fontSize: 'var(--text-xs)', textAlign: 'right', fontFamily: 'var(--font-mono)' }} />
                                               <span className="text-xs">dar el</span>
-                                              <input className="form-input" type="number" value={rule.pct} onChange={e => updateRule(catIdx, crIdx, ruleIdx, 'pct', e.target.value)} placeholder="80" style={{ width: 70, padding: 4, fontSize: 'var(--text-xs)' }} />
+                                              <input className="form-input" type="number" value={rule.pct} onChange={e => updateRule(catIdx, crIdx, ruleIdx, 'pct', e.target.value)} placeholder="80" style={{ width: 90, padding: '4px 6px', fontSize: 'var(--text-xs)', textAlign: 'right', fontFamily: 'var(--font-mono)' }} />
                                               <span className="text-xs">% de este criterio</span>
                                               <button className="btn btn--ghost btn--icon btn--sm text-danger" onClick={() => removeRule(catIdx, crIdx, ruleIdx)}>
                                                 <Trash2 size={12} />
