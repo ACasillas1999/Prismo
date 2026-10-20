@@ -266,7 +266,7 @@ export default function Reports() {
               <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                 <BarChart3 className="text-secondary" /> Desempeño por Área (Último Período)
               </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 'var(--space-8)', alignItems: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))', gap: 'var(--space-8)', alignItems: 'center' }}>
                 <div style={{ height: 350 }}>
                   {data.categoryAverages.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
@@ -550,7 +550,7 @@ export default function Reports() {
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                   <BarChart3 className="text-secondary" /> Promedio de Rendimiento por Categoría
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 'var(--space-6)', alignItems: 'center' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 360px), 1fr))', gap: 'var(--space-6)', alignItems: 'center' }}>
                   <div style={{ height: 320 }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <RadarChart cx="50%" cy="50%" outerRadius="70%" data={agentData.categoryAverages}>
