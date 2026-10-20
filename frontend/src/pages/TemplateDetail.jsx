@@ -357,8 +357,8 @@ export default function TemplateDetail() {
         borderColor: catWeightValid ? 'var(--accent-success)' : 'var(--accent-warning)',
         borderWidth: '1px',
       }}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <BarChart3 size={20} style={{ color: catWeightValid ? 'var(--accent-success)' : 'var(--accent-warning)' }} />
             <span className="font-semibold">
               Peso Total de Categorías:
@@ -398,7 +398,7 @@ export default function TemplateDetail() {
                 {/* Category Header */}
                 <div className="flex items-center gap-3 mb-4">
                   <GripVertical size={16} style={{ color: 'var(--text-tertiary)', cursor: 'grab' }} />
-                  <div className="flex items-center gap-3" style={{ flex: 1 }}>
+                  <div className="flex items-center gap-3 category-fields" style={{ flex: 1 }}>
                     <input
                       className="form-input"
                       style={{ fontWeight: 600 }}

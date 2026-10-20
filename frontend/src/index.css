@@ -1430,6 +1430,17 @@ a:hover {
     max-width: none !important;
   }
 
+    /* Plantillas: el nombre de la categoría ocupa todo el renglón y el peso baja */
+  .category-fields {
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .category-fields > .form-input {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+
   .main-content {
     padding: var(--space-4);
   }
