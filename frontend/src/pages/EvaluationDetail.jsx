@@ -403,7 +403,7 @@ export default function EvaluationDetail() {
       <EvidencePreviewModal evidence={previewEvidence} onClose={() => setPreviewEvidence(null)} />
 
       {/* Summary cards */}
-      <div className="grid-4 mb-6">
+      <div className="grid-4 mb-6 kpi-grid">
         <div className="kpi-card">
           <div className="kpi-card__icon kpi-card__icon--primary"><User size={20} /></div>
           <span className="kpi-card__label">Agente</span>
@@ -440,8 +440,8 @@ export default function EvaluationDetail() {
             style={{ borderLeft: '3px solid var(--accent-primary)' }}
           >
             {/* Category header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <BarChart3 size={18} style={{ color: 'var(--accent-primary)' }} />
                 <h3 className="font-semibold">{cat.name}</h3>
                 <span className="badge badge--primary">{parseFloat(cat.weight)}%</span>
@@ -464,7 +464,7 @@ export default function EvaluationDetail() {
 
             {/* Criteria table */}
             <div className="data-table-wrapper">
-              <table className="data-table">
+              <table className="data-table criteria-table">
                 <thead>
                   <tr>
                     <th>Criterio</th>
@@ -733,7 +733,7 @@ export default function EvaluationDetail() {
       </div>
 
       {/* Action buttons */}
-      <div className="flex gap-3 mt-6" style={{ justifyContent: 'flex-end' }}>
+      <div className="flex gap-3 mt-6 actions-bar" style={{ justifyContent: 'flex-end' }}>
         {isEvaluator && (
           <button className="btn btn--secondary" onClick={handleDelete} disabled={saving} style={{ color: 'var(--accent-danger)', borderColor: 'var(--accent-danger)' }}>
             <Trash2 size={18} /> Eliminar

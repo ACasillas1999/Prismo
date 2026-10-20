@@ -1456,6 +1456,15 @@ a:hover {
     padding-right: 32px !important;
   }
 
+    /* Botones de acción al final de un formulario: uno por renglón, a todo el ancho */
+  .actions-bar {
+    flex-wrap: wrap;
+  }
+  .actions-bar > * {
+    flex: 1 1 100%;
+  }
+
+
 
   .main-content {
     padding: var(--space-4);
