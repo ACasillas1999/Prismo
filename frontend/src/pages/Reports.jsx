@@ -463,7 +463,7 @@ export default function Reports() {
           >
             {/* Agent Header / Profile Card */}
             <div className="card flex items-center justify-between flex-wrap gap-4" style={{ background: 'var(--bg-secondary)', borderLeft: '4px solid var(--accent-primary)' }}>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 agent-profile">
                 <div style={{
                   width: 54, height: 54, borderRadius: '50%',
                   backgroundColor: 'var(--accent-primary)', color: 'white',
