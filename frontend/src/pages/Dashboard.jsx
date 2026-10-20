@@ -100,7 +100,7 @@ export default function Dashboard() {
       ) : (
         <>
           {/* KPI Cards */}
-          <div className={`mb-6 ${user?.role === 'agent' ? 'grid-3' : 'grid-4'}`}>
+          <div className={`mb-6 kpi-grid ${user?.role === 'agent' ? 'grid-3' : 'grid-4'}`}>
             {kpis.map((kpi, i) => (
               <motion.div
                 key={kpi.label}

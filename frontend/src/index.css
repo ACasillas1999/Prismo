@@ -1211,7 +1211,7 @@ a:hover {
   font-size: var(--text-sm);
   font-weight: 500;
   box-shadow: var(--shadow-lg);
-  min-width: 300px;
+  min-width: min(300px, calc(100vw - 32px));
 }
 
 .toast--success { background: var(--accent-success-dim); color: var(--accent-success); border: 1px solid hsl(150, 40%, 25%); }
@@ -1221,6 +1221,16 @@ a:hover {
 /* ============================================================================
    RESPONSIVE
    ============================================================================ */
+/* Mobile-only controls, hidden on desktop */
+.sidebar-overlay,
+.sidebar__close,
+.topbar__menu {
+  display: none;
+}
+.sidebar__close {
+  margin-left: auto;
+}
+
 @media (max-width: 1024px) {
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
@@ -1234,8 +1244,50 @@ a:hover {
       "main";
   }
 
+  /* Sidebar becomes an off-canvas drawer */
   .sidebar {
-    display: none; /* TODO: mobile drawer */
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(280px, 85vw);
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 90;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .sidebar__close,
+  .topbar__menu {
+    display: inline-flex;
+  }
+
+  /* Compact topbar */
+  .topbar {
+    padding: 0 var(--space-3);
+    gap: var(--space-2);
+  }
+  .topbar__search,
+  .topbar__user-info {
+    display: none !important;
   }
 
   .grid-4,
@@ -1244,8 +1296,43 @@ a:hover {
     grid-template-columns: 1fr;
   }
 
+    /* KPI cards: 2 per row on mobile, more compact */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
+  .kpi-grid .kpi-card {
+    padding: var(--space-4);
+    gap: var(--space-2);
+  }
+  .kpi-grid .kpi-card__icon {
+    width: 36px;
+    height: 36px;
+  }
+  .kpi-grid .kpi-card__value {
+    font-size: var(--text-2xl);
+  }
+
+
   .main-content {
     padding: var(--space-4);
+  }
+
+  /* iOS Safari auto-zooms on focus when input font-size < 16px */
+  .form-input,
+  .form-select,
+  .form-textarea,
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .login-page {
+    padding: var(--space-4);
+  }
+  .login-card {
+    padding: var(--space-6);
   }
 
   .page-header {
