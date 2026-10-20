@@ -1440,6 +1440,22 @@ a:hover {
     min-width: 0;
   }
 
+    /* Plantillas: la tabla de criterios mantiene un ancho cómodo y se desliza */
+  .criteria-table {
+    min-width: 720px;
+  }
+  .criteria-table th:first-child {
+    min-width: 200px;
+  }
+
+    .criteria-table th:nth-child(2) {
+    min-width: 150px;
+  }
+  /* Espacio a la derecha para que la flecha del select no tape el texto */
+  .criteria-table .form-select {
+    padding-right: 32px !important;
+  }
+
 
   .main-content {
     padding: var(--space-4);

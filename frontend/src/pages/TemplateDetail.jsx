@@ -457,7 +457,7 @@ export default function TemplateDetail() {
                 {/* Criteria Table */}
                 <div style={{ paddingLeft: 28 }}>
                   <div className="data-table-wrapper" style={{ marginBottom: 'var(--space-3)' }}>
-                    <table className="data-table">
+                    <table className="data-table criteria-table">
                       <thead>
                         <tr>
                           <th>Criterio</th>
