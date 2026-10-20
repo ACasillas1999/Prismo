@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
@@ -15,6 +16,7 @@ import {
   LogOut,
   Settings,
   History,
+  X,
 } from 'lucide-react';
 
 const NAV_SECTIONS = [
@@ -52,9 +54,22 @@ const NAV_SECTIONS = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ open = false, onClose = () => {} }) {
   const { user, logout } = useAuth();
   const location = useLocation();
+
+  // Close mobile drawer when navigating
+  useEffect(() => {
+    onClose();
+  }, [location.pathname, onClose]);
+
+  // Close mobile drawer with Escape key
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [open, onClose]);
 
   const filteredSections = NAV_SECTIONS
     .filter(section => !section.roles || section.roles.includes(user?.role))
@@ -65,13 +80,28 @@ export default function Sidebar() {
     .filter(section => section.items.length > 0);
 
   return (
-    <nav className="sidebar">
+    <>
+    {/* Dark overlay behind drawer (mobile only) */}
+    <div
+      className={`sidebar-overlay${open ? ' open' : ''}`}
+      onClick={onClose}
+      aria-hidden="true"
+    />
+    <nav className={`sidebar${open ? ' open' : ''}`}>
       {/* Logo */}
       <div className="sidebar__logo">
         <div className="sidebar__logo-icon">
           <Target size={22} color="white" strokeWidth={2.5} />
         </div>
         <span className="sidebar__logo-text">Prismo</span>
+        <button
+          className="btn btn--ghost btn--icon sidebar__close"
+          onClick={onClose}
+          title="Cerrar menú"
+          aria-label="Cerrar menú"
+        >
+          <X size={20} strokeWidth={1.75} />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -102,5 +132,6 @@ export default function Sidebar() {
         </button>
       </div>
     </nav>
+    </>
   );
 }

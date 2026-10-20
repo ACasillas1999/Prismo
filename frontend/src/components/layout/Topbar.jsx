@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Bell, Search, Sun, Moon } from 'lucide-react';
+import { Bell, Search, Sun, Moon, Menu } from 'lucide-react';
 import client from '../../api/client';
 
 const ROLE_LABELS = {
@@ -10,7 +10,7 @@ const ROLE_LABELS = {
   agent: 'Agente',
 };
 
-export default function Topbar() {
+export default function Topbar({ onMenuClick }) {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -93,8 +93,18 @@ export default function Topbar() {
 
   return (
     <header className="topbar">
+      {/* Hamburger (mobile only) */}
+      <button
+        className="btn btn--ghost btn--icon topbar__menu"
+        onClick={onMenuClick}
+        title="Abrir menú"
+        aria-label="Abrir menú"
+      >
+        <Menu size={22} strokeWidth={1.75} />
+      </button>
+
       {/* Search (placeholder for future) */}
-      <div className="flex items-center gap-3" style={{ flex: 1 }}>
+      <div className="flex items-center gap-3 topbar__search" style={{ flex: 1 }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -156,7 +166,7 @@ export default function Topbar() {
               position: 'absolute',
               top: '45px',
               right: 0,
-              width: '320px',
+              width: 'min(320px, calc(100vw - 32px))',
               background: 'var(--bg-primary)',
               border: '1px solid var(--border-color)',
               borderRadius: 'var(--radius-lg)',

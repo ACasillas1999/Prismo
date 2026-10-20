@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import Sidebar from './components/layout/Sidebar';
@@ -19,10 +19,14 @@ import AuditLogs from './pages/AuditLogs';
 import Reports from './pages/Reports';
 
 function AppLayout() {
+  // Mobile drawer state (sidebar is always visible on desktop)
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+
   return (
     <div className="app-shell">
-      <Sidebar />
-      <Topbar />
+      <Sidebar open={sidebarOpen} onClose={closeSidebar} />
+      <Topbar onMenuClick={() => setSidebarOpen(true)} />
       <main className="main-content">
         <Routes>
           <Route path="/" element={
