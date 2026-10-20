@@ -1483,6 +1483,16 @@ a:hover {
     flex: 1;
   }
 
+    /* Notificaciones: fijas debajo de la barra superior, con margen a los lados */
+  .notif-dropdown {
+    position: fixed !important;
+    top: calc(var(--topbar-height) + var(--space-2)) !important;
+    left: var(--space-3) !important;
+    right: var(--space-3) !important;
+    width: auto !important;
+  }
+
+
 
 
 

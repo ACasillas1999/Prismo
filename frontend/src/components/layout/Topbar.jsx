@@ -161,6 +161,7 @@ export default function Topbar({ onMenuClick }) {
 
         {showDropdown && (
           <div 
+            className="notif-dropdown"
             onClick={e => e.stopPropagation()}
             style={{
               position: 'absolute',
