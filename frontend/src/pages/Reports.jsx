@@ -139,7 +139,7 @@ export default function Reports() {
           <p className="page-header__subtitle">Métricas de rendimiento del equipo y seguimiento individual por agente</p>
         </div>
         
-        <div className="flex items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-4 flex-wrap reports-filters">
           <div className="flex items-center gap-2">
             <Calendar size={18} className="text-tertiary" />
             <input 
@@ -205,20 +205,24 @@ export default function Reports() {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 mb-6" style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-2)' }}>
+      <div className="flex items-center gap-2 mb-6 reports-tabs" style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-2)' }}>
         <button
           className={`btn ${activeTab === 'general' ? 'btn--primary' : 'btn--ghost'}`}
           onClick={() => setActiveTab('general')}
           style={{ borderRadius: 'var(--radius-md)' }}
         >
-          <BarChart3 size={16} /> Rendimiento General del Equipo
+          <BarChart3 size={16} />
+          <span className="label-full">Rendimiento General del Equipo</span>
+          <span className="label-short">General</span>
         </button>
         <button
           className={`btn ${activeTab === 'agent' ? 'btn--primary' : 'btn--ghost'}`}
           onClick={() => setActiveTab('agent')}
           style={{ borderRadius: 'var(--radius-md)' }}
         >
-          <UserCheck size={16} /> Histórico por Agente
+          <UserCheck size={16} />
+          <span className="label-full">Histórico por Agente</span>
+          <span className="label-short">Por Agente</span>
         </button>
       </div>
 
