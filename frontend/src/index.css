@@ -1402,8 +1402,24 @@ a:hover {
     white-space: nowrap;
   }
 
+    /* Page header buttons: wrap and stretch full width */
+  .page-header__actions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .page-header__actions > * {
+    flex: 1 1 100%;
+  }
 
-
+  /* Filter rows: wrap, about 2 per row */
+  .filters-bar {
+    flex-wrap: wrap;
+  }
+  .filters-bar > * {
+    flex: 1 1 140px !important;
+    min-width: 0;
+    max-width: none !important;
+  }
 
   .main-content {
     padding: var(--space-4);

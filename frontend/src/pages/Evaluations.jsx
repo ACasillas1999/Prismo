@@ -163,7 +163,7 @@ export default function Evaluations() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 mb-6 flex-wrap">
+        <div className="flex gap-3 mb-6 flex-wrap filters-bar">
         <div className="flex-1 min-w-[150px]">
           <label className="form-label text-xs text-tertiary mb-1">Período</label>
           <select className="form-select w-full" value={filterPeriod} onChange={(e) => setFilterPeriod(e.target.value)}>

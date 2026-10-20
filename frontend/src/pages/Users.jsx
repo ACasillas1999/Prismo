@@ -134,7 +134,7 @@ export default function UsersPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 mb-6">
+        <div className="flex gap-3 mb-6 filters-bar">
         <div style={{ position: 'relative', flex: 1, maxWidth: 300 }}>
           <Search size={16} style={{
             position: 'absolute', left: 12, top: '50%',
