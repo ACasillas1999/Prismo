@@ -1464,6 +1464,26 @@ a:hover {
     flex: 1 1 100%;
   }
 
+    /* Modales: aprovechar el ancho de la pantalla */
+  .modal-overlay {
+    padding: var(--space-3);
+  }
+  .modal {
+    max-height: 90vh;
+    max-height: calc(100dvh - var(--space-6));
+  }
+  .modal__header,
+  .modal__body {
+    padding: var(--space-4);
+  }
+  .modal__footer {
+    padding: var(--space-3) var(--space-4);
+  }
+  .modal__footer > * {
+    flex: 1;
+  }
+
+
 
 
   .main-content {
