@@ -1173,6 +1173,33 @@ a:hover {
 .mb-4 { margin-bottom: var(--space-4); }
 .mb-6 { margin-bottom: var(--space-6); }
 
+/* Utilities used in JSX that were missing */
+.flex-1         { flex: 1 1 0%; }
+.justify-center { justify-content: center; }
+.justify-end    { justify-content: flex-end; }
+.w-full         { width: 100%; }
+.gap-1          { gap: var(--space-1); }
+
+.mt-1 { margin-top: var(--space-1); }
+.mt-3 { margin-top: var(--space-3); }
+.mb-1 { margin-bottom: var(--space-1); }
+.mb-2 { margin-bottom: var(--space-2); }
+.mb-3 { margin-bottom: var(--space-3); }
+
+.text-lg       { font-size: var(--text-lg); }
+.text-xl       { font-size: var(--text-xl); }
+.font-medium   { font-weight: 500; }
+.uppercase     { text-transform: uppercase; }
+.capitalize    { text-transform: capitalize; }
+.cursor-pointer { cursor: pointer; }
+
+.text-primary  { color: var(--text-primary); }
+.text-tertiary { color: var(--text-tertiary); }
+.text-success  { color: var(--accent-success); }
+.text-warning  { color: var(--accent-warning); }
+.text-danger   { color: var(--accent-danger); }
+
+
 .truncate {
   overflow: hidden;
   text-overflow: ellipsis;
