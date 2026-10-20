@@ -677,7 +677,7 @@ a:hover {
   background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .data-table {
@@ -1345,6 +1345,19 @@ a:hover {
   .label-short {
     display: inline;
   }
+
+  /* Tables: tighter cells, headers on one line */
+  .data-table th,
+  .data-table td,
+  .table th,
+  .table td {
+    padding: var(--space-2) var(--space-3);
+  }
+  .data-table th,
+  .table th {
+    white-space: nowrap;
+  }
+
 
 
 
