@@ -114,7 +114,7 @@ export default function Periods() {
         </div>
       </div>
 
-      <div className="flex gap-3 mb-6">
+      <div className="flex gap-3 mb-6 filters-bar">
         <div className="flex-1 min-w-[200px]" style={{ maxWidth: 250 }}>
           <label className="form-label text-xs text-tertiary mb-1">Estado</label>
           <select className="form-select w-full" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
