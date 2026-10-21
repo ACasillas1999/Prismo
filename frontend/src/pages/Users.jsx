@@ -195,7 +195,7 @@ export default function UsersPage() {
         </motion.div>
       ) : (
         <div className="data-table-wrapper">
-          <table className="data-table">
+          <table className="data-table table-cards">
             <thead>
               <tr>
                 <th>Usuario</th>
@@ -225,22 +225,22 @@ export default function UsersPage() {
                         </span>
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Email">
                       <div className="flex items-center gap-2">
                         <Mail size={14} style={{ color: 'var(--text-tertiary)' }} />
                         <span className="text-sm">{user.email}</span>
                       </div>
                     </td>
-                    <td>
+                    <td data-label ="Rol">
                       <span className={`badge badge--${ROLE_VARIANTS[user.role]}`}>
                         <Shield size={12} />
                         {ROLE_LABELS[user.role]}
                       </span>
                     </td>
-                    <td>
+                    <td data-label= "Departamento">
                       <span className="text-sm">{user.department_name || '—'}</span>
                     </td>
-                    <td>
+                    <td data-label="Puesto">
                       <span className="text-sm">{user.position_name || '—'}</span>
                     </td>
                     <td>

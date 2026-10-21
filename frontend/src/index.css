@@ -1502,6 +1502,63 @@ a:hover {
     width: auto !important;
   }
 
+    /* Tablas como tarjetas: cada fila se vuelve una tarjeta */
+  .table-cards thead {
+    display: none;
+  }
+  .table-cards,
+  .table-cards tbody,
+  .table-cards tr,
+  .table-cards td {
+    display: block;
+    width: 100%;
+  }
+  .table-cards tr {
+    position: relative;
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .table-cards tr:last-child {
+    border-bottom: none;
+  }
+  .table-cards td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-1) 0;
+    border: none;
+  }
+  .table-cards td > * {
+    min-width: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  /* Título de la columna, tomado del atributo data-label */
+  .table-cards td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+  }
+  /* Primera celda = encabezado de la tarjeta (deja espacio para los botones) */
+  .table-cards td:first-child {
+    padding-right: 96px;
+    margin-bottom: var(--space-2);
+  }
+  /* Última celda = botones, arriba a la derecha */
+  .table-cards td:last-child {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    width: auto;
+    padding: 0;
+  }
+
+
 
 
 
