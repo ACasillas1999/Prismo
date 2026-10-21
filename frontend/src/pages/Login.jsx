@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Target, Mail, Lock, ArrowRight } from 'lucide-react';
 import Particles, { ParticlesProvider } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
+import PwaInstallPrompt from '../components/common/PwaInstallPrompt';
 
 
 
@@ -218,6 +219,8 @@ export default function Login() {
             )}
           </motion.button>
         </form>
+
+        <PwaInstallPrompt />
       </motion.div>
     </div>
     </ParticlesProvider>
