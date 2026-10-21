@@ -1156,6 +1156,16 @@ a:hover {
 }
 
 
+/* Contenedor de tarjetas de Reportes: una columna con separación entre tarjetas */
+.dashboard-grid {
+  display: grid;
+  gap: var(--space-6);
+}
+.dashboard-grid > * {
+  min-width: 0;
+}
+
+
 .flex      { display: flex; }
 .flex-col  { flex-direction: column; }
 .flex-wrap { flex-wrap: wrap; }
