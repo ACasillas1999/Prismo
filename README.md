@@ -29,9 +29,6 @@ y da seguimiento al desempeño de cada agente con reportes y gráficas.
 
 ---
 
-
-![Reportes](docs/screenshots/reportes.png)
-
 ## 📑 Contenido
 
 - [Características](#-características)
