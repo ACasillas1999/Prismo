@@ -17,9 +17,25 @@ y da seguimiento al desempeño de cada agente con reportes y gráficas.
 
 ---
 
+## 🖼 Capturas
+
+**Dashboard**
+
+![Dashboard](docs/screencapture1.png)
+
+**Detalle de evaluación**
+
+![Detalle de evaluación](docs/screencapture.png)
+
+---
+
+
+![Reportes](docs/screenshots/reportes.png)
+
 ## 📑 Contenido
 
 - [Características](#-características)
+- [Capturas](#-capturas)
 - [Tecnologías](#-tecnologías)
 - [Estructura del proyecto](#-estructura-del-proyecto)
 - [Requisitos](#-requisitos)
